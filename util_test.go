@@ -1,25 +1,43 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 )
 
-func Test_getFileType(t *testing.T) {
-	dir_list := []string{
+var (
+	dir_list = []string{
 		".",
 		"..",
 		"/",
 		"/dev"}
+	invalid_list = []string{
+		"",
+		"516e7cb4-6ecf-11d6-8ff8-00022d09712b"}
+)
+
+func Test_getRawFileType(t *testing.T) {
+	for _, f := range dir_list {
+		ret, err := getRawFileType(f)
+		if ret != DIR || err != nil {
+			t.Error(f)
+		}
+	}
+	for _, f := range invalid_list {
+		ret, _ := getRawFileType(f)
+		if ret != INVALID {
+			t.Error(f)
+		}
+	}
+}
+
+func Test_getFileType(t *testing.T) {
 	for _, f := range dir_list {
 		ret, err := getFileType(f)
 		if ret != DIR || err != nil {
 			t.Error(f)
 		}
 	}
-
-	invalid_list := []string{
-		"",
-		"516e7cb4-6ecf-11d6-8ff8-00022d09712b"}
 	for _, f := range invalid_list {
 		ret, _ := getFileType(f)
 		if ret != INVALID {
@@ -29,24 +47,15 @@ func Test_getFileType(t *testing.T) {
 }
 
 func Test_pathExists(t *testing.T) {
-	dir_list := []string{
-		".",
-		"..",
-		"/",
-		"/dev"}
 	for _, f := range dir_list {
 		exists, err := pathExists(f)
 		if !exists || err != nil {
 			t.Error(f)
 		}
 	}
-
-	invalid_list := []string{
-		"",
-		"516e7cb4-6ecf-11d6-8ff8-00022d09712b"}
 	for _, f := range invalid_list {
-		exists, _ := pathExists(f)
-		if exists {
+		exists, err := pathExists(f)
+		if exists || err == nil {
 			t.Error(f)
 		}
 	}
@@ -110,4 +119,29 @@ func Test_isValidHexSum(t *testing.T) {
 			t.Error(s)
 		}
 	}
+}
+
+func Test_assert(t *testing.T) {
+	assert(true)
+	assert(!false)
+	assert(true != false)
+
+	assert(0 == 0)
+	assert(1 == 1)
+	assert(0 != 1)
+
+	assert("" == "")
+	assert("xxx" == "xxx")
+	assert("xxx" != "yyy")
+}
+
+func Test_kassert(t *testing.T) {
+	kassert(true, nil)
+	kassert(!false, nil)
+
+	kassert(true, "")
+	kassert(!false, "")
+
+	kassert(true, fmt.Errorf(""))
+	kassert(!false, fmt.Errorf(""))
 }

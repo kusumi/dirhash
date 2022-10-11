@@ -6,16 +6,24 @@ import (
 	"strings"
 )
 
-type fileType int
-
 const (
-	DIR fileType = iota
+	DIR = iota
 	REG
+	SYMLINK
 	UNSUPPORTED
 	INVALID
 )
 
-func getFileType(f string) (fileType, error) {
+func getRawFileType(f string) (int, error) {
+	info, err := os.Lstat(f)
+	if err != nil {
+		return INVALID, err
+	}
+
+	return getModeType(info.Mode())
+}
+
+func getFileType(f string) (int, error) {
 	info, err := os.Stat(f)
 	if err != nil {
 		return INVALID, err
@@ -24,11 +32,13 @@ func getFileType(f string) (fileType, error) {
 	return getModeType(info.Mode())
 }
 
-func getModeType(m fs.FileMode) (fileType, error) {
+func getModeType(m fs.FileMode) (int, error) {
 	if m.IsDir() {
 		return DIR, nil
 	} else if m.IsRegular() {
 		return REG, nil
+	} else if m&fs.ModeSymlink != 0 {
+		return SYMLINK, nil
 	}
 
 	return UNSUPPORTED, nil
@@ -38,10 +48,6 @@ func pathExists(f string) (bool, error) {
 	_, err := os.Stat(f)
 	if err == nil {
 		return true, nil
-	}
-
-	if os.IsNotExist(err) {
-		return false, nil
 	}
 
 	return false, err
@@ -66,7 +72,11 @@ func isValidHexSum(s string) (string, bool) {
 }
 
 func assert(c bool) {
+	kassert(c, "Assert failed")
+}
+
+func kassert(c bool, err interface{}) {
 	if !c {
-		panic("Assertion")
+		panic(err)
 	}
 }

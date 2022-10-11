@@ -1,8 +1,12 @@
-all:
-	go build -o dirhash
+bin1:
+	go build -o dirhash -tags squash1
+bin2:
+	go build -o dirhash -tags squash2
 fmt:
 	go fmt
-test:
-	go test -v
+test1:
+	go test -v -tags squash1
+test2:
+	go test -v -tags squash2
 clean:
 	go clean

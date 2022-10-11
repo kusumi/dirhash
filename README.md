@@ -1,4 +1,4 @@
-dirhash (v0.1.0)
+dirhash (v0.2.0)
 ========
 
 ## About
@@ -24,6 +24,8 @@ Run make(1) or gmake(1).
             Hash algorithm to use (default "sha256")
       -hash_verify string
             Message digest to verify in hex string
+      -squash
+            Enable squashed message digest
       -v    Print version and exit
       -verbose
             Enable verbose print
