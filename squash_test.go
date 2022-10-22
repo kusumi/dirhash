@@ -8,36 +8,31 @@ import (
 func Test_initSquashBuffer(t *testing.T) {
 	initSquashBuffer()
 
-	s := getSquashBuffer()
-	if s != "" {
-		t.Error(s)
+	if b := getSquashBuffer(); b == nil {
+		t.Error(b)
 	}
 }
 
 func Test_updateSquashBuffer(t *testing.T) {
 	initSquashBuffer()
 
-	updateSquashBuffer("")
-	s1 := getSquashBuffer()
-	if s1 == "" {
-		t.Error(s1)
+	updateSquashBuffer([]byte(""))
+	if b := getSquashBuffer(); b == nil {
+		t.Error(b)
 	}
 
-	updateSquashBuffer("")
-	s2 := getSquashBuffer()
-	if s2 == "" {
-		t.Error(s2)
+	updateSquashBuffer([]byte(""))
+	if b := getSquashBuffer(); b == nil {
+		t.Error(b)
 	}
 
-	updateSquashBuffer("xxx")
-	s3 := getSquashBuffer()
-	if s3 == "" {
-		t.Error(s3)
+	updateSquashBuffer([]byte("xxx"))
+	if b := getSquashBuffer(); b == nil {
+		t.Error(b)
 	}
 
-	updateSquashBuffer(strings.Repeat("x", 123456))
-	s4 := getSquashBuffer()
-	if s4 == "" {
-		t.Error(s4)
+	updateSquashBuffer([]byte(strings.Repeat("x", 123456)))
+	if b := getSquashBuffer(); b == nil {
+		t.Error(b)
 	}
 }

@@ -5,6 +5,21 @@ import (
 	"testing"
 )
 
+func Test_isWindows(t *testing.T) {
+	if isWindows() {
+		t.Error("Windows unsupported")
+	}
+}
+
+func Test_getPathSeparator(t *testing.T) {
+	if isWindows() {
+		return
+	}
+	if s := getPathSeparator(); s != "/" {
+		t.Error(s)
+	}
+}
+
 var (
 	dir_list = []string{
 		".",
@@ -18,14 +33,12 @@ var (
 
 func Test_getRawFileType(t *testing.T) {
 	for _, f := range dir_list {
-		ret, err := getRawFileType(f)
-		if ret != DIR || err != nil {
+		if ret, err := getRawFileType(f); ret != DIR || err != nil {
 			t.Error(f)
 		}
 	}
 	for _, f := range invalid_list {
-		ret, _ := getRawFileType(f)
-		if ret != INVALID {
+		if ret, _ := getRawFileType(f); ret != INVALID {
 			t.Error(f)
 		}
 	}
@@ -33,29 +46,44 @@ func Test_getRawFileType(t *testing.T) {
 
 func Test_getFileType(t *testing.T) {
 	for _, f := range dir_list {
-		ret, err := getFileType(f)
-		if ret != DIR || err != nil {
+		if ret, err := getFileType(f); ret != DIR || err != nil {
 			t.Error(f)
 		}
 	}
 	for _, f := range invalid_list {
-		ret, _ := getFileType(f)
-		if ret != INVALID {
+		if ret, _ := getFileType(f); ret != INVALID {
 			t.Error(f)
+		}
+	}
+}
+
+func Test_getFileTypeString(t *testing.T) {
+	file_type_list := []struct {
+		typ fileType
+		str string
+	}{
+		{DIR, "directory"},
+		{REG, "regular file"},
+		{DEVICE, "device"},
+		{SYMLINK, "symlink"},
+		{UNSUPPORTED, "unsupported file"},
+		{INVALID, "invalid file"},
+	}
+	for _, x := range file_type_list {
+		if getFileTypeString(x.typ) != x.str {
+			t.Error(x)
 		}
 	}
 }
 
 func Test_pathExists(t *testing.T) {
 	for _, f := range dir_list {
-		exists, err := pathExists(f)
-		if !exists || err != nil {
+		if exists, err := pathExists(f); !exists || err != nil {
 			t.Error(f)
 		}
 	}
 	for _, f := range invalid_list {
-		exists, err := pathExists(f)
-		if exists || err == nil {
+		if exists, err := pathExists(f); exists || err == nil {
 			t.Error(f)
 		}
 	}
@@ -91,8 +119,7 @@ func Test_isValidHexSum(t *testing.T) {
 		"0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		"0x0123456789ABCDEFabcdef0123456789ABCDEFabcdef"}
 	for _, s := range valid_list {
-		_, valid := isValidHexSum(s)
-		if !valid {
+		if _, valid := isValidHexSum(s); !valid {
 			t.Error(s)
 		}
 	}
@@ -114,9 +141,28 @@ func Test_isValidHexSum(t *testing.T) {
 		"0",
 		""}
 	for _, s := range invalid_list {
-		_, valid := isValidHexSum(s)
-		if valid {
+		if _, valid := isValidHexSum(s); valid {
 			t.Error(s)
+		}
+	}
+}
+
+func Test_getNumFormatString(t *testing.T) {
+	num_format_list := []struct {
+		n      uint64
+		msg    string
+		result string
+	}{
+		{0, "", "???"},
+		{1, "", "???"},
+		{2, "", "???"},
+		{0, "file", "0 file"},
+		{1, "file", "1 file"},
+		{2, "file", "2 files"},
+	}
+	for _, x := range num_format_list {
+		if getNumFormatString(x.n, x.msg) != x.result {
+			t.Error(x)
 		}
 	}
 }
@@ -126,12 +172,12 @@ func Test_assert(t *testing.T) {
 	assert(!false)
 	assert(true != false)
 
-	assert(0 == 0)
-	assert(1 == 1)
-	assert(0 != 1)
+	assert(0 == 0+0)
+	assert(1 == 1+0)
+	assert(0 != 1+0)
 
-	assert("" == "")
-	assert("xxx" == "xxx")
+	assert("" == ""+"")
+	assert("xxx" == "xxx"+"")
 	assert("xxx" != "yyy")
 }
 

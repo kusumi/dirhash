@@ -1,31 +1,49 @@
-dirhash (v0.2.0)
+dirhash ([v0.3.0](https://github.com/kusumi/dirhash/releases/tag/v0.3.0))
 ========
 
 ## About
 
 Recursively walk directory trees and print message digest of regular files.
 
-## Build
+## Supported platforms
 
-Run make(1) or gmake(1).
+Unix-likes in general
+
+## Requirements
+
+go 1.18 or above
+
+## Build
 
     $ make
 
-## Usage
+or
+
+    $ gmake
+
+## [Usage](doc/dirhash.1.txt)
 
     $ ./dirhash
-    usage: ./dirhash: [<options>] <paths>
+    usage: dirhash: [<options>] <paths>
       -abs
-            Use absolute path in output
+            Print file path in absolute path
       -debug
             Enable debug print
       -h    Print usage and exit
       -hash_algo string
             Hash algorithm to use (default "sha256")
+      -hash_only
+            Do not print file path
       -hash_verify string
             Message digest to verify in hex string
+      -ignore_dot
+            Ignore entry starts with .
+      -ignore_symlink
+            Ignore symbolic link
+      -lstat
+            Do not resolve symbolic link
       -squash
-            Enable squashed message digest
+            Print squashed message digest instead of per file
       -v    Print version and exit
       -verbose
             Enable verbose print

@@ -3,22 +3,22 @@
 package main
 
 var (
-	squashBuffer string
+	squashBuffer []byte
 )
 
 func initSquashBuffer() {
-	squashBuffer = ""
+	squashBuffer = make([]byte, 0)
 }
 
-func updateSquashBuffer(s string) {
+func updateSquashBuffer(b []byte) {
 	// result depends on append order
-	b, err := getStringHash(squashBuffer+s, SHA1)
+	_, tmp, err := getByteHash(append(squashBuffer, b...), SHA1)
 	if err != nil {
 		panic(err)
 	}
-	squashBuffer = getHexSum(b)
+	squashBuffer = tmp
 }
 
-func getSquashBuffer() string {
+func getSquashBuffer() []byte {
 	return squashBuffer
 }

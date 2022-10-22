@@ -1,3 +1,10 @@
+v0.3.0
+======
+- Add -hash_only option
+- Add -ignore_dot option
+- Add -ignore_symlink option
+- Add -lstat option
+
 v0.2.0
 ======
 - Add -squash option

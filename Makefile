@@ -10,3 +10,8 @@ test2:
 	go test -v -tags squash2
 clean:
 	go clean
+
+lint1:
+	golangci-lint run --build-tags squash1
+lint2:
+	golangci-lint run --build-tags squash2

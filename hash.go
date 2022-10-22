@@ -6,6 +6,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/hex"
 	"fmt"
 	"golang.org/x/crypto/sha3"
 	"hash"
@@ -77,43 +78,44 @@ func newHash(hash_algo string) hash.Hash {
 	}
 }
 
-func getFileHash(f string, hash_algo string) ([]byte, error) {
+func getFileHash(f string, hash_algo string) (uint64, []byte, error) {
 	fp, err := os.Open(f)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 	defer fp.Close()
 
 	info, err := fp.Stat()
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
+	stat_size := uint64(info.Size())
 
 	written, b, err := getHash(fp, hash_algo)
-	assert(written == info.Size())
+	assert(written == stat_size || stat_size == 0)
 
-	return b, err
+	return written, b, err
 }
 
-func getByteHash(s []byte, hash_algo string) ([]byte, error) {
+func getByteHash(s []byte, hash_algo string) (uint64, []byte, error) {
 	r := bytes.NewReader(s)
 
 	written, b, err := getHash(r, hash_algo)
-	assert(written == int64(len(s)))
+	assert(written == uint64(len(s)))
 
-	return b, err
+	return written, b, err
 }
 
-func getStringHash(s string, hash_algo string) ([]byte, error) {
+func getStringHash(s string, hash_algo string) (uint64, []byte, error) {
 	r := strings.NewReader(s)
 
 	written, b, err := getHash(r, hash_algo)
-	assert(written == int64(len(s)))
+	assert(written == uint64(len(s)))
 
-	return b, err
+	return written, b, err
 }
 
-func getHash(r io.Reader, hash_algo string) (int64, []byte, error) {
+func getHash(r io.Reader, hash_algo string) (uint64, []byte, error) {
 	h := newHash(hash_algo)
 	if h == nil {
 		return 0, nil, fmt.Errorf("invalid hash algorithm %s", hash_algo)
@@ -124,9 +126,9 @@ func getHash(r io.Reader, hash_algo string) (int64, []byte, error) {
 		return 0, nil, err
 	}
 
-	return written, h.Sum(nil), nil
+	return uint64(written), h.Sum(nil), nil
 }
 
 func getHexSum(sum []byte) string {
-	return fmt.Sprintf("%x", sum)
+	return hex.EncodeToString(sum)
 }

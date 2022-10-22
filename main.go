@@ -4,23 +4,29 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 )
 
 var (
-	version       [3]int = [3]int{0, 1, 0}
-	optHashVerify string
-	optAbs        bool
-	optSquash     bool
-	optVerbose    bool
-	optDebug      bool
+	version          [3]int = [3]int{0, 3, 0}
+	optHashVerify    string
+	optHashOnly      bool
+	optIgnoreDot     bool
+	optIgnoreSymlink bool
+	optLstat         bool
+	optAbs           bool
+	optSquash        bool
+	optVerbose       bool
+	optDebug         bool
 )
 
+func getVersionString() string {
+	return fmt.Sprintf("%d.%d.%d", version[0], version[1], version[2])
+}
+
 func printVersion() {
-	fmt.Printf("%d.%d.%d\n",
-		version[0],
-		version[1],
-		version[2])
+	fmt.Println(getVersionString())
 }
 
 func usage(progname string) {
@@ -29,12 +35,16 @@ func usage(progname string) {
 }
 
 func main() {
-	progname := os.Args[0]
+	progname := path.Base(os.Args[0])
 
 	opt_hash_algo := flag.String("hash_algo", SHA256, "Hash algorithm to use")
 	opt_hash_verify := flag.String("hash_verify", "", "Message digest to verify in hex string")
-	opt_abs := flag.Bool("abs", false, "Use absolute path in output")
-	opt_squash := flag.Bool("squash", false, "Enable squashed message digest")
+	opt_hash_only := flag.Bool("hash_only", false, "Do not print file path")
+	opt_ignore_dot := flag.Bool("ignore_dot", false, "Ignore entry starts with .")
+	opt_ignore_symlink := flag.Bool("ignore_symlink", false, "Ignore symbolic link")
+	opt_lstat := flag.Bool("lstat", false, "Do not resolve symbolic link")
+	opt_abs := flag.Bool("abs", false, "Print file path in absolute path")
+	opt_squash := flag.Bool("squash", false, "Print squashed message digest instead of per file")
 	opt_verbose := flag.Bool("verbose", false, "Enable verbose print")
 	opt_debug := flag.Bool("debug", false, "Enable debug print")
 	opt_version := flag.Bool("v", false, "Print version and exit")
@@ -43,6 +53,10 @@ func main() {
 	flag.Parse()
 	args := flag.Args()
 	optHashVerify = strings.ToLower(*opt_hash_verify)
+	optHashOnly = *opt_hash_only
+	optIgnoreDot = *opt_ignore_dot
+	optIgnoreSymlink = *opt_ignore_symlink
+	optLstat = *opt_lstat
 	optAbs = *opt_abs
 	optSquash = *opt_squash
 	optVerbose = *opt_verbose
@@ -69,6 +83,7 @@ func main() {
 		os.Exit(1)
 	}
 	if optVerbose {
+		printVersion()
 		fmt.Println(hash_algo)
 	}
 
@@ -87,10 +102,25 @@ func main() {
 	}
 	assert(optHashVerify == strings.ToLower(optHashVerify))
 
-	for _, x := range args {
+	if isWindows() {
+		fmt.Println("Windows unsupported")
+		os.Exit(1)
+	}
+
+	// XXX assuming Unix-likes
+	if s := getPathSeparator(); s != "/" {
+		fmt.Println("Invalid path separator", s)
+		os.Exit(1)
+	}
+
+	for i, x := range args {
 		err := printInput(x, hash_algo)
 		if err != nil {
-			panic(err)
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		if optVerbose && len(args) > 0 && i != len(args)-1 {
+			fmt.Println()
 		}
 	}
 }

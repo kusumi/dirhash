@@ -1,0 +1,73 @@
+.TH DIRHASH 1 "October 21, 2022" "DIRHASH 0.3.0"
+.nh
+.ad l
+.SH NAME
+dirhash
+.SH SYNOPSIS
+\fBdirhash\fP [\fIoptions\fP]... [\fIpaths\fP]...
+.SH DESCRIPTION
+Recursively walk directory trees and print message digest of regular files.
+.SH OPTIONS
+.PP
+\fB\-abs\fP
+.RS 4
+Print file path in absolute path.
+.RE
+.PP
+\fB\-debug\fP
+.RS 4
+Enable debug print.
+.RE
+.PP
+\fB\-h\fP
+.RS 4
+Print usage and exit.
+.RE
+.PP
+\fB\-hash_algo\fP \fI<string>\fP
+.RS 4
+Hash algorithm to use.
+Defaults to "sha256".
+.RE
+.PP
+\fB\-hash_only\fP
+.RS 4
+Do not print file path.
+.RE
+.PP
+\fB\-hash_verify\fP \fI<string>\fP
+.RS 4
+Message digest to verify in hex string.
+.RE
+.PP
+\fB\-ignore_dot\fP
+.RS 4
+Ignore entry starts with '.'.
+.RE
+.PP
+\fB\-ignore_symlink\fP
+.RS 4
+Ignore symbolic link.
+.RE
+.PP
+\fB\-lstat\fP
+.RS 4
+Do not resolve symbolic link.
+.RE
+.PP
+\fB\-squash\fP
+.RS 4
+Print squashed message digest instead of per file.
+.RE
+.PP
+\fB\-v\fP
+.RS 4
+Print version and exit.
+.RE
+.PP
+\fB\-verbose\fP
+.RS 4
+Enable verbose print.
+.RE
+.SH AUTHORS
+Tomohiro Kusumi <\fItkusumi@netbsd.org\fP>

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
 
 var (
 	inputPrefix string
-	totalFiles  uint64
 )
 
 func printInput(f string, hash_algo string) error {
@@ -20,52 +20,63 @@ func printInput(f string, hash_algo string) error {
 		return err
 	}
 
-	// make input abs, and keep base directory as prefix
+	// convert input to abs first
+	f, err = filepath.Abs(f)
+	if err != nil {
+		return err
+	}
+	assertFilePath(f)
+
+	// keep input prefix based on raw type
 	t, err := getFileType(f)
 	if err != nil {
 		return err
 	}
 	switch t {
 	case DIR:
-		f, err = filepath.Abs(f)
-		if err != nil {
-			return err
-		}
 		inputPrefix = f
 	case REG:
-		f, err = filepath.Abs(f)
-		if err != nil {
-			return err
-		}
+		fallthrough
+	case DEVICE:
 		inputPrefix = filepath.Dir(f)
 	default:
 		return fmt.Errorf("%s has unsupported type %d", f, t)
 	}
 
-	assertFilePath(f)
-
 	// prefix is a directory
 	t, _ = getFileType(inputPrefix)
 	assert(t == DIR)
 
-	// initialize global variables
-	totalFiles = 0
+	// initialize global resource
+	initStat()
 	initSquashBuffer()
 
 	// start directory walk
 	err = filepath.WalkDir(f, getWalkDirHandler(hash_algo))
-
-	// print squash hash if optSquash
-	if err == nil && optSquash {
-		s := getSquashBuffer()
-		if optVerbose {
-			fmt.Println(totalFiles, "files")
-			fmt.Println(len(s), "bytes")
-		}
-		err = printString(f, s, hash_algo)
+	if err != nil {
+		return err
 	}
 
-	return err
+	// print various stats
+	if optVerbose {
+		printVerboseStat()
+	}
+	printStatUnsupported()
+	printStatInvalid()
+
+	// print squash hash if specified
+	if optSquash {
+		b := getSquashBuffer()
+		if optVerbose {
+			printNumFormatString(uint64(len(b)), "squashed byte")
+		}
+		err = printByte(f, b, hash_algo)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func getWalkDirHandler(hash_algo string) fs.WalkDirFunc {
@@ -81,10 +92,30 @@ func getWalkDirHandler(hash_algo string) fs.WalkDirFunc {
 			return err
 		}
 
+		// ignore . entries if specified
+		if optIgnoreDot {
+			// XXX want retval to ignore children for .directory
+			if t != DIR {
+				// XXX really ?
+				if strings.HasPrefix(path.Base(f), ".") ||
+					strings.Contains(f, "/.") {
+					appendStatIgnored(f)
+					return nil
+				}
+			}
+		}
+
 		// find target if symlink
-		var l string
+		var l string // symlink itself, not its target
 		switch t {
 		case SYMLINK:
+			if optIgnoreSymlink {
+				appendStatIgnored(f)
+				return nil
+			}
+			if optLstat {
+				return printSymlink(f, hash_algo)
+			}
 			l = f
 			f, err = os.Readlink(f)
 			if err != nil {
@@ -98,23 +129,32 @@ func getWalkDirHandler(hash_algo string) fs.WalkDirFunc {
 			if err != nil {
 				return err
 			}
-			assert(t != SYMLINK)
+			assert(t != SYMLINK) // symlink chains resolved
 		default:
 			l = ""
 		}
 
 		switch t {
 		case DIR:
+			// A regular directory isn't considered ignored,
+			// then don't count symlink to directory as ignored.
+			//if len(l) > 0 {
+			//	appendStatIgnored(l)
+			//}
 			return nil
 		case REG:
-			return printReg(f, l, hash_algo)
+			fallthrough
+		case DEVICE:
+			return printFile(f, l, t, hash_algo)
 		case UNSUPPORTED:
 			return printUnsupported(f)
 		case INVALID:
 			return printInvalid(f)
 		default:
-			panic(fmt.Sprintf("%s has invalid type %d", f, t))
+			panicFileType(f, "unknown", t)
 		}
+
+		assert(false)
 		return nil
 	}
 }
@@ -136,114 +176,188 @@ func getRealPath(f string) string {
 	}
 }
 
-func getXsumFormat(f string, h string) string {
-	// compatible with shaXsum commands
-	return fmt.Sprintf("%s  %s", h, f)
-}
-
-func printString(f string, s string, hash_algo string) error {
+func printByte(f string, inb []byte, hash_algo string) error {
 	assertFilePath(f)
 
 	// get hash value
-	b, err := getStringHash(s, hash_algo)
+	_, b, err := getByteHash(inb, hash_algo)
 	if err != nil {
 		return err
 	}
 	assert(len(b) > 0)
+	hex_sum := getHexSum(b)
 
 	// verify hash value if specified
-	hex_sum := getHexSum(b)
 	if optHashVerify != "" {
 		if optHashVerify != hex_sum {
 			return nil
 		}
 	}
 
-	realf := getRealPath(f)
-	if realf == "." {
-		_, err = fmt.Println(hex_sum)
+	if optHashOnly {
+		fmt.Println(hex_sum)
 	} else {
-		_, err = fmt.Println(getXsumFormat(realf, hex_sum))
+		if realf := getRealPath(f); realf == "." {
+			fmt.Println(hex_sum)
+		} else {
+			fmt.Println(getXsumFormatString(realf, hex_sum))
+		}
 	}
 
-	return err
+	return nil
 }
 
-func printReg(f string, l string, hash_algo string) error {
+func printFile(f string, l string, t fileType, hash_algo string) error {
+	assertFilePath(f)
+	if len(l) > 0 {
+		assertFilePath(l)
+	}
+
+	// debug print first
+	if optDebug {
+		if err := printDebug(f, t); err != nil {
+			return err
+		}
+	}
+
+	// get hash value
+	written, b, err := getFileHash(f, hash_algo)
+	if err != nil {
+		return err
+	}
+	assert(len(b) > 0)
+	hex_sum := getHexSum(b)
+
+	// count this file
+	appendStatTotal()
+	appendWrittenTotal(written)
+	switch t {
+	case REG:
+		appendStatRegular(f)
+		appendWrittenRegular(written)
+	case DEVICE:
+		appendStatDevice(f)
+		appendWrittenDevice(written)
+	default:
+		panicFileType(f, "invalid", t)
+	}
+
+	// verify hash value if specified
+	if optHashVerify != "" {
+		if optHashVerify != hex_sum {
+			return nil
+		}
+	}
+
+	// squash or print this file
+	if optHashOnly {
+		if optSquash {
+			updateSquashBuffer(b)
+		} else {
+			fmt.Println(hex_sum)
+		}
+	} else {
+		// make link -> target format if symlink
+		realf := getRealPath(f)
+		if len(l) > 0 {
+			assertFilePath(l)
+			if !optAbs {
+				if strings.HasPrefix(l, inputPrefix) {
+					l = l[len(inputPrefix)+1:]
+					assert(!strings.HasPrefix(l, "/"))
+				}
+			}
+			realf = fmt.Sprintf("%s -> %s", l, realf)
+		}
+		if optSquash {
+			updateSquashBuffer(append([]byte(realf), b...))
+		} else {
+			fmt.Println(getXsumFormatString(realf, hex_sum))
+		}
+	}
+
+	return nil
+}
+
+func printSymlink(f string, hash_algo string) error {
 	assertFilePath(f)
 
 	// debug print first
 	if optDebug {
-		err := printDebug(f, "reg")
-		if err != nil {
+		if err := printDebug(f, SYMLINK); err != nil {
 			return err
 		}
 	}
 
+	// get a symlink string to get hash value
+	s, err := os.Readlink(f)
+	if err != nil {
+		return err
+	}
+
 	// get hash value
-	b, err := getFileHash(f, hash_algo)
+	written, b, err := getStringHash(s, hash_algo)
 	if err != nil {
 		return err
 	}
 	assert(len(b) > 0)
+	hex_sum := getHexSum(b)
+
+	// count this file
+	appendStatTotal()
+	appendWrittenTotal(written)
+	appendStatSymlink(f)
+	appendWrittenSymlink(written)
 
 	// verify hash value if specified
-	hex_sum := getHexSum(b)
 	if optHashVerify != "" {
 		if optHashVerify != hex_sum {
 			return nil
 		}
 	}
 
-	// count this file
-	totalFiles++
-
-	// make link -> target format if symlink
-	realf := getRealPath(f)
-	if len(l) > 0 {
-		assertFilePath(l)
-		if !optAbs {
-			if strings.HasPrefix(l, inputPrefix) {
-				l = l[len(inputPrefix)+1:]
-				assert(!strings.HasPrefix(l, "/"))
-			}
-		}
-		realf = fmt.Sprintf("%s -> %s", l, realf)
-	}
-
 	// squash or print this file
-	if optSquash {
-		updateSquashBuffer(fmt.Sprintf("%s:%s", realf, hex_sum))
+	if optHashOnly {
+		if optSquash {
+			updateSquashBuffer(b)
+		} else {
+			fmt.Println(hex_sum)
+		}
 	} else {
-		_, err = fmt.Println(getXsumFormat(realf, hex_sum))
+		// hash value is from s, but print realf path for clarity
+		if realf := getRealPath(f); optSquash {
+			updateSquashBuffer(append([]byte(realf), b...))
+		} else {
+			fmt.Println(getXsumFormatString(realf, hex_sum))
+		}
 	}
 
-	return err
+	return nil
 }
 
 func printUnsupported(f string) error {
 	if optDebug {
-		err := printDebug(f, "unsupported")
-		if err != nil {
+		if err := printDebug(f, UNSUPPORTED); err != nil {
 			return err
 		}
 	}
 
+	appendStatUnsupported(f)
 	return nil
 }
 
 func printInvalid(f string) error {
 	if optDebug {
-		err := printDebug(f, "invalid")
-		if err != nil {
+		if err := printDebug(f, INVALID); err != nil {
 			return err
 		}
 	}
 
+	appendStatInvalid(f)
 	return nil
 }
 
-func printDebug(f string, s string) error {
+func printDebug(f string, t fileType) error {
 	assert(optDebug)
 	if optAbs {
 		var err error
@@ -253,8 +367,50 @@ func printDebug(f string, s string) error {
 		}
 	}
 
-	_, err := fmt.Println("###", f, s)
-	return err
+	fmt.Println("###", f, getFileTypeString(t))
+	return nil
+}
+
+func printVerboseStat() {
+	indent := " "
+
+	printNumFormatString(numStatTotal(), "file")
+	a1 := numStatRegular()
+	a2 := numStatDevice()
+	a3 := numStatSymlink()
+	assert(a1+a2+a3 == numStatTotal())
+	if a1 > 0 {
+		fmt.Print(indent)
+		printNumFormatString(a1, REG_STR)
+	}
+	if a2 > 0 {
+		fmt.Print(indent)
+		printNumFormatString(a2, DEVICE_STR)
+	}
+	if a3 > 0 {
+		fmt.Print(indent)
+		printNumFormatString(a3, SYMLINK_STR)
+	}
+
+	printNumFormatString(numWrittenTotal(), "byte")
+	b1 := numWrittenRegular()
+	b2 := numWrittenDevice()
+	b3 := numWrittenSymlink()
+	assert(b1+b2+b3 == numWrittenTotal())
+	if b1 > 0 {
+		fmt.Print(indent)
+		printNumFormatString(b1, REG_STR+" byte")
+	}
+	if b2 > 0 {
+		fmt.Print(indent)
+		printNumFormatString(b2, DEVICE_STR+" byte")
+	}
+	if b3 > 0 {
+		fmt.Print(indent)
+		printNumFormatString(b3, SYMLINK_STR+" byte")
+	}
+
+	printStatIgnored()
 }
 
 func assertFilePath(f string) {
