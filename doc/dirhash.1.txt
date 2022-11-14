@@ -32,6 +32,12 @@ OPTIONS
        -ignore_dot
            Ignore entry starts with '.'.
 
+       -ignore_dot_dir
+           Ignore directory starts with '.'.
+
+       -ignore_dot_file
+           Ignore file starts with '.'.
+
        -ignore_symlink
            Ignore symbolic link.
 
@@ -50,4 +56,4 @@ OPTIONS
 AUTHORS
        Tomohiro Kusumi <tkusumi@netbsd.org>
 
-DIRHASH 0.3.0                  October 21, 2022                     DIRHASH(1)
+DIRHASH 0.3.1                  November 13, 2022                    DIRHASH(1)

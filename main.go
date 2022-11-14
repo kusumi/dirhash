@@ -9,10 +9,12 @@ import (
 )
 
 var (
-	version          [3]int = [3]int{0, 3, 0}
+	version          [3]int = [3]int{0, 3, 1}
 	optHashVerify    string
 	optHashOnly      bool
 	optIgnoreDot     bool
+	optIgnoreDotDir  bool
+	optIgnoreDotFile bool
 	optIgnoreSymlink bool
 	optLstat         bool
 	optAbs           bool
@@ -41,6 +43,8 @@ func main() {
 	opt_hash_verify := flag.String("hash_verify", "", "Message digest to verify in hex string")
 	opt_hash_only := flag.Bool("hash_only", false, "Do not print file path")
 	opt_ignore_dot := flag.Bool("ignore_dot", false, "Ignore entry starts with .")
+	opt_ignore_dot_dir := flag.Bool("ignore_dot_dir", false, "Ignore directory starts with .")
+	opt_ignore_dot_file := flag.Bool("ignore_dot_file", false, "Ignore file starts with .")
 	opt_ignore_symlink := flag.Bool("ignore_symlink", false, "Ignore symbolic link")
 	opt_lstat := flag.Bool("lstat", false, "Do not resolve symbolic link")
 	opt_abs := flag.Bool("abs", false, "Print file path in absolute path")
@@ -55,6 +59,8 @@ func main() {
 	optHashVerify = strings.ToLower(*opt_hash_verify)
 	optHashOnly = *opt_hash_only
 	optIgnoreDot = *opt_ignore_dot
+	optIgnoreDotDir = *opt_ignore_dot_dir
+	optIgnoreDotFile = *opt_ignore_dot_file
 	optIgnoreSymlink = *opt_ignore_symlink
 	optLstat = *opt_lstat
 	optAbs = *opt_abs
@@ -107,7 +113,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// XXX assuming Unix-likes
 	if s := getPathSeparator(); s != "/" {
 		fmt.Println("Invalid path separator", s)
 		os.Exit(1)

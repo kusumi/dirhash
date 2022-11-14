@@ -1,4 +1,4 @@
-dirhash ([v0.3.0](https://github.com/kusumi/dirhash/releases/tag/v0.3.0))
+dirhash ([v0.3.1](https://github.com/kusumi/dirhash/releases/tag/v0.3.1))
 ========
 
 ## About
@@ -38,6 +38,10 @@ or
             Message digest to verify in hex string
       -ignore_dot
             Ignore entry starts with .
+      -ignore_dot_dir
+            Ignore directory starts with .
+      -ignore_dot_file
+            Ignore file starts with .
       -ignore_symlink
             Ignore symbolic link
       -lstat

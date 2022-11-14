@@ -92,17 +92,9 @@ func getWalkDirHandler(hash_algo string) fs.WalkDirFunc {
 			return err
 		}
 
-		// ignore . entries if specified
-		if optIgnoreDot {
-			// XXX want retval to ignore children for .directory
-			if t != DIR {
-				// XXX really ?
-				if strings.HasPrefix(path.Base(f), ".") ||
-					strings.Contains(f, "/.") {
-					appendStatIgnored(f)
-					return nil
-				}
-			}
+		if testIgnoreEntry(f, t) {
+			appendStatIgnored(f)
+			return nil
 		}
 
 		// find target if symlink
@@ -157,6 +149,42 @@ func getWalkDirHandler(hash_algo string) fs.WalkDirFunc {
 		assert(false)
 		return nil
 	}
+}
+
+func testIgnoreEntry(f string, t fileType) bool {
+	assert(filepath.IsAbs(f))
+
+	// only non directory types count
+	if t == DIR {
+		return false
+	}
+
+	base_starts_with_dot := strings.HasPrefix(path.Base(f), ".")
+	path_contains_slash_dot := strings.Contains(f, "/.")
+
+	// ignore . directories if specified
+	if optIgnoreDotDir {
+		if !base_starts_with_dot && path_contains_slash_dot {
+			return true
+		}
+	}
+
+	// ignore . regular files if specified
+	if optIgnoreDotFile {
+		// XXX limit to REG ?
+		if base_starts_with_dot {
+			return true
+		}
+	}
+
+	// ignore . entries if specified
+	if optIgnoreDot {
+		if base_starts_with_dot || path_contains_slash_dot {
+			return true
+		}
+	}
+
+	return false
 }
 
 func getRealPath(f string) string {

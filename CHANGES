@@ -1,3 +1,8 @@
+v0.3.1
+======
+- Add -ignore_dot_dir option
+- Add -ignore_dot_file option
+
 v0.3.0
 ======
 - Add -hash_only option
