@@ -56,4 +56,4 @@ OPTIONS
 AUTHORS
        Tomohiro Kusumi <tkusumi@netbsd.org>
 
-DIRHASH 0.3.1                  November 13, 2022                    DIRHASH(1)
+DIRHASH 0.3.2                  February 04, 2022                    DIRHASH(1)

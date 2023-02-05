@@ -10,6 +10,8 @@ func Test_initSquashBuffer(t *testing.T) {
 
 	if b := getSquashBuffer(); b == nil {
 		t.Error(b)
+	} else if len(b) != 0 {
+		t.Error(b)
 	}
 }
 
@@ -19,20 +21,28 @@ func Test_updateSquashBuffer(t *testing.T) {
 	updateSquashBuffer([]byte(""))
 	if b := getSquashBuffer(); b == nil {
 		t.Error(b)
+	} else if len(b) == 0 {
+		t.Error(b)
 	}
 
 	updateSquashBuffer([]byte(""))
 	if b := getSquashBuffer(); b == nil {
+		t.Error(b)
+	} else if len(b) == 0 {
 		t.Error(b)
 	}
 
 	updateSquashBuffer([]byte("xxx"))
 	if b := getSquashBuffer(); b == nil {
 		t.Error(b)
+	} else if len(b) == 0 {
+		t.Error(b)
 	}
 
 	updateSquashBuffer([]byte(strings.Repeat("x", 123456)))
 	if b := getSquashBuffer(); b == nil {
+		t.Error(b)
+	} else if len(b) == 0 {
 		t.Error(b)
 	}
 }
