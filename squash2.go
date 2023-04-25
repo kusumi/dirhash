@@ -3,7 +3,9 @@
 package main
 
 var (
-	squashBuffer []byte
+	squashLabel   = "squash"
+	squashVersion = 2
+	squashBuffer  []byte
 )
 
 func initSquashBuffer() {

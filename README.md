@@ -1,4 +1,4 @@
-dirhash ([v0.3.2](https://github.com/kusumi/dirhash/releases/tag/v0.3.2))
+dirhash ([v0.3.3](https://github.com/kusumi/dirhash/releases/tag/v0.3.3))
 ========
 
 ## About
@@ -26,26 +26,26 @@ or
     $ ./dirhash
     usage: dirhash: [<options>] <paths>
       -abs
-            Print file path in absolute path
+            Print file paths in absolute path
       -debug
             Enable debug print
       -h    Print usage and exit
       -hash_algo string
             Hash algorithm to use (default "sha256")
       -hash_only
-            Do not print file path
+            Do not print file paths
       -hash_verify string
             Message digest to verify in hex string
       -ignore_dot
-            Ignore entry starts with .
+            Ignore entries start with .
       -ignore_dot_dir
-            Ignore directory starts with .
+            Ignore directories start with .
       -ignore_dot_file
-            Ignore file starts with .
+            Ignore files start with .
       -ignore_symlink
-            Ignore symbolic link
+            Ignore symbolic links
       -lstat
-            Do not resolve symbolic link
+            Do not resolve symbolic links
       -squash
             Print squashed message digest instead of per file
       -v    Print version and exit

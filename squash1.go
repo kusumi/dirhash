@@ -8,7 +8,9 @@ import (
 )
 
 var (
-	squashBuffer [][]byte
+	squashLabel   = "squash"
+	squashVersion = 1
+	squashBuffer  [][]byte
 )
 
 func initSquashBuffer() {

@@ -225,10 +225,11 @@ func printByte(f string, inb []byte, hash_algo string) error {
 	if optHashOnly {
 		fmt.Println(hex_sum)
 	} else {
+		s := fmt.Sprintf("[%s][v%d]", squashLabel, squashVersion)
 		if realf := getRealPath(f); realf == "." {
-			fmt.Println(hex_sum)
+			fmt.Println(hex_sum, s)
 		} else {
-			fmt.Println(getXsumFormatString(realf, hex_sum))
+			fmt.Println(getXsumFormatString(realf, hex_sum), s)
 		}
 	}
 

@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	version          [3]int = [3]int{0, 3, 2}
+	version          [3]int = [3]int{0, 3, 3}
 	optHashVerify    string
 	optHashOnly      bool
 	optIgnoreDot     bool
@@ -41,13 +41,13 @@ func main() {
 
 	opt_hash_algo := flag.String("hash_algo", SHA256, "Hash algorithm to use")
 	opt_hash_verify := flag.String("hash_verify", "", "Message digest to verify in hex string")
-	opt_hash_only := flag.Bool("hash_only", false, "Do not print file path")
-	opt_ignore_dot := flag.Bool("ignore_dot", false, "Ignore entry starts with .")
-	opt_ignore_dot_dir := flag.Bool("ignore_dot_dir", false, "Ignore directory starts with .")
-	opt_ignore_dot_file := flag.Bool("ignore_dot_file", false, "Ignore file starts with .")
-	opt_ignore_symlink := flag.Bool("ignore_symlink", false, "Ignore symbolic link")
-	opt_lstat := flag.Bool("lstat", false, "Do not resolve symbolic link")
-	opt_abs := flag.Bool("abs", false, "Print file path in absolute path")
+	opt_hash_only := flag.Bool("hash_only", false, "Do not print file paths")
+	opt_ignore_dot := flag.Bool("ignore_dot", false, "Ignore entries start with .")
+	opt_ignore_dot_dir := flag.Bool("ignore_dot_dir", false, "Ignore directories start with .")
+	opt_ignore_dot_file := flag.Bool("ignore_dot_file", false, "Ignore files start with .")
+	opt_ignore_symlink := flag.Bool("ignore_symlink", false, "Ignore symbolic links")
+	opt_lstat := flag.Bool("lstat", false, "Do not resolve symbolic links")
+	opt_abs := flag.Bool("abs", false, "Print file paths in absolute path")
 	opt_squash := flag.Bool("squash", false, "Print squashed message digest instead of per file")
 	opt_verbose := flag.Bool("verbose", false, "Enable verbose print")
 	opt_debug := flag.Bool("debug", false, "Enable debug print")
