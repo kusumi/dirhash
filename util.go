@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -26,12 +27,28 @@ const (
 	INVALID_STR     = "invalid file"
 )
 
+func canonicalizePath(l string) (string, error) {
+	if s, err := filepath.EvalSymlinks(l); err != nil {
+		if info, err := os.Lstat(l); err != nil {
+			if info.Mode()&fs.ModeSymlink != 0 {
+				return "", nil // ignore broken symlink
+			} else {
+				return "", err
+			}
+		} else {
+			return "", err
+		}
+	} else {
+		return s, nil
+	}
+}
+
 func isWindows() bool {
 	return runtime.GOOS == "windows"
 }
 
-func getPathSeparator() string {
-	return string(os.PathSeparator)
+func getPathSeparator() rune {
+	return os.PathSeparator
 }
 
 func getRawFileType(f string) (fileType, error) {
@@ -123,7 +140,13 @@ func getNumFormatString(n uint64, msg string) string {
 
 	s := fmt.Sprintf("%d %s", n, msg)
 	if n > 1 {
-		s += "s"
+		if msg == DIR_STR {
+			s = s[:len(s)-1]
+			s += "ies"
+			assert(strings.HasSuffix(s, "directories"))
+		} else {
+			s += "s"
+		}
 	}
 
 	return s

@@ -5,6 +5,7 @@ import (
 )
 
 var (
+	statDirectory   []string // hashed
 	statRegular     []string // hashed
 	statDevice      []string // hashed
 	statSymlink     []string // hashed
@@ -12,12 +13,14 @@ var (
 	statInvalid     []string
 	statIgnored     []string
 
-	writtenRegular uint64 // hashed
-	writtenDevice  uint64 // hashed
-	writtenSymlink uint64 // hashed
+	writtenDirectory uint64 // hashed
+	writtenRegular   uint64 // hashed
+	writtenDevice    uint64 // hashed
+	writtenSymlink   uint64 // hashed
 )
 
 func initStat() {
+	statDirectory = make([]string, 0)
 	statRegular = make([]string, 0)
 	statDevice = make([]string, 0)
 	statSymlink = make([]string, 0)
@@ -25,6 +28,7 @@ func initStat() {
 	statInvalid = make([]string, 0)
 	statIgnored = make([]string, 0)
 
+	writtenDirectory = 0
 	writtenRegular = 0
 	writtenDevice = 0
 	writtenSymlink = 0
@@ -32,7 +36,11 @@ func initStat() {
 
 // num stat
 func numStatTotal() uint64 {
-	return numStatRegular() + numStatDevice() + numStatSymlink()
+	return numStatDirectory() + numStatRegular() + numStatDevice() + numStatSymlink()
+}
+
+func numStatDirectory() uint64 {
+	return uint64(len(statDirectory))
 }
 
 func numStatRegular() uint64 {
@@ -65,6 +73,10 @@ func numStatIgnored() uint64 {
 func appendStatTotal() {
 }
 
+func appendStatDirectory(f string) {
+	statDirectory = append(statDirectory, f)
+}
+
 func appendStatRegular(f string) {
 	statRegular = append(statRegular, f)
 }
@@ -91,6 +103,10 @@ func appendStatIgnored(f string) {
 
 // print stat
 /*
+func printStatDirectory() {
+	printStat(statDirectory, DIR_STR)
+}
+
 func printStatRegular() {
 	printStat(statRegular, REG_STR)
 }
@@ -128,7 +144,7 @@ func printStat(l []string, msg string) {
 		t2, _ := getFileType(v)
 		assert(t2 != SYMLINK) // symlink chains resolved
 		if t1 == SYMLINK {
-			assert(optIgnoreSymlink || t2 == DIR)
+			assert(optIgnoreSymlink || t2 == DIR || t2 == INVALID)
 			fmt.Printf("%s (%s -> %s)\n",
 				f, getFileTypeString(t1), getFileTypeString(t2))
 		} else {
@@ -140,7 +156,11 @@ func printStat(l []string, msg string) {
 
 // num written
 func numWrittenTotal() uint64 {
-	return numWrittenRegular() + numWrittenDevice() + numWrittenSymlink()
+	return numWrittenDirectory() + numWrittenRegular() + numWrittenDevice() + numWrittenSymlink()
+}
+
+func numWrittenDirectory() uint64 {
+	return writtenDirectory
 }
 
 func numWrittenRegular() uint64 {
@@ -157,6 +177,10 @@ func numWrittenSymlink() uint64 {
 
 // append written
 func appendWrittenTotal(written uint64) {
+}
+
+func appendWrittenDirectory(written uint64) {
+	writtenDirectory += written
 }
 
 func appendWrittenRegular(written uint64) {

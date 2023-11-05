@@ -109,14 +109,13 @@ func getWalkDirHandler(hash_algo string) fs.WalkDirFunc {
 				return printSymlink(f, hash_algo)
 			}
 			l = f
-			f, err = os.Readlink(f)
+			f, err = canonicalizePath(f)
 			if err != nil {
 				return err
+			} else if f == "" {
+				return printInvalid(l)
 			}
-			if !filepath.IsAbs(f) {
-				f = filepath.Join(filepath.Dir(l), f)
-				assert(filepath.IsAbs(f))
-			}
+			assert(filepath.IsAbs(f))
 			t, err = getFileType(f)
 			if err != nil {
 				return err
@@ -133,7 +132,7 @@ func getWalkDirHandler(hash_algo string) fs.WalkDirFunc {
 			//if len(l) > 0 {
 			//	appendStatIgnored(l)
 			//}
-			return nil
+			return handleDirectory(f, l, hash_algo)
 		case REG:
 			fallthrough
 		case DEVICE:
@@ -187,6 +186,14 @@ func testIgnoreEntry(f string, t fileType) bool {
 	return false
 }
 
+func trimInputPrefix(f string) string {
+	if strings.HasPrefix(f, inputPrefix) {
+		f = f[len(inputPrefix)+1:]
+		assert(!strings.HasPrefix(f, "/"))
+	}
+	return f
+}
+
 func getRealPath(f string) string {
 	if optAbs {
 		assert(filepath.IsAbs(f))
@@ -195,12 +202,9 @@ func getRealPath(f string) string {
 		return "."
 	} else if inputPrefix == "/" {
 		return f[1:]
-	} else if strings.HasPrefix(f, inputPrefix) {
-		f = f[len(inputPrefix)+1:]
-		assert(!strings.HasPrefix(f, "/"))
-		return f
 	} else {
-		return f // f is probably symlink target
+		// f is probably symlink target if f unchanged
+		return trimInputPrefix(f)
 	}
 }
 
@@ -225,12 +229,71 @@ func printByte(f string, inb []byte, hash_algo string) error {
 	if optHashOnly {
 		fmt.Println(hex_sum)
 	} else {
+		// no space between two
 		s := fmt.Sprintf("[%s][v%d]", squashLabel, squashVersion)
 		if realf := getRealPath(f); realf == "." {
-			fmt.Println(hex_sum, s)
+			fmt.Println(hex_sum + s)
 		} else {
-			fmt.Println(getXsumFormatString(realf, hex_sum), s)
+			fmt.Println(getXsumFormatString(realf, hex_sum) + s)
 		}
+	}
+
+	return nil
+}
+
+func handleDirectory(f string, l string, hash_algo string) error {
+	assertFilePath(f)
+	if len(l) > 0 {
+		assertFilePath(l)
+	}
+
+	// nothing to do if input is input prefix
+	if f == inputPrefix {
+		return nil
+	}
+
+	// nothing to do unless squash
+	if !optSquash {
+		return nil
+	}
+
+	// debug print first
+	if optDebug {
+		if err := printDebug(f, DIR); err != nil {
+			return err
+		}
+	}
+
+	// get hash value
+	// path must be relative from input prefix
+	s := trimInputPrefix(f)
+	written, b, err := getStringHash(s, hash_algo)
+	if err != nil {
+		return err
+	}
+	assert(len(b) > 0)
+
+	// count this file
+	appendStatTotal()
+	appendWrittenTotal(written)
+	appendStatDirectory(f)
+	appendWrittenDirectory(written)
+
+	// squash
+	assert(optSquash)
+	if optHashOnly {
+		updateSquashBuffer(b)
+	} else {
+		// make link -> target format if symlink
+		realf := getRealPath(f)
+		if len(l) > 0 {
+			assertFilePath(l)
+			if !optAbs {
+				l = trimInputPrefix(l)
+			}
+			realf = fmt.Sprintf("%s -> %s", l, realf)
+		}
+		updateSquashBuffer(append([]byte(realf), b...))
 	}
 
 	return nil
@@ -291,10 +354,7 @@ func printFile(f string, l string, t fileType, hash_algo string) error {
 		if len(l) > 0 {
 			assertFilePath(l)
 			if !optAbs {
-				if strings.HasPrefix(l, inputPrefix) {
-					l = l[len(inputPrefix)+1:]
-					assert(!strings.HasPrefix(l, "/"))
-				}
+				l = trimInputPrefix(l)
 			}
 			realf = fmt.Sprintf("%s -> %s", l, realf)
 		}
@@ -319,6 +379,7 @@ func printSymlink(f string, hash_algo string) error {
 	}
 
 	// get a symlink string to get hash value
+	// must keep relative symlink path as is
 	s, err := os.Readlink(f)
 	if err != nil {
 		return err
@@ -404,10 +465,15 @@ func printVerboseStat() {
 	indent := " "
 
 	printNumFormatString(numStatTotal(), "file")
+	a0 := numStatDirectory()
 	a1 := numStatRegular()
 	a2 := numStatDevice()
 	a3 := numStatSymlink()
-	assert(a1+a2+a3 == numStatTotal())
+	assert(a0+a1+a2+a3 == numStatTotal())
+	if a0 > 0 {
+		fmt.Print(indent)
+		printNumFormatString(a0, DIR_STR)
+	}
 	if a1 > 0 {
 		fmt.Print(indent)
 		printNumFormatString(a1, REG_STR)
@@ -422,10 +488,15 @@ func printVerboseStat() {
 	}
 
 	printNumFormatString(numWrittenTotal(), "byte")
+	b0 := numWrittenDirectory()
 	b1 := numWrittenRegular()
 	b2 := numWrittenDevice()
 	b3 := numWrittenSymlink()
-	assert(b1+b2+b3 == numWrittenTotal())
+	assert(b0+b1+b2+b3 == numWrittenTotal())
+	if b0 > 0 {
+		fmt.Print(indent)
+		printNumFormatString(b0, DIR_STR+" byte")
+	}
 	if b1 > 0 {
 		fmt.Print(indent)
 		printNumFormatString(b1, REG_STR+" byte")

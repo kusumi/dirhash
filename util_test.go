@@ -5,6 +5,27 @@ import (
 	"testing"
 )
 
+func Test_canonicalizePath(t *testing.T) {
+	path_list := []struct {
+		i string
+		o string
+	}{
+		{"/", "/"},
+		{"/////", "/"},
+		{"/..", "/"},
+		{"/../", "/"},
+		{"/root", "/root"},
+		{"/root/", "/root"},
+		{"/root/..", "/"},
+		{"/root/../dev", "/dev"},
+	}
+	for _, x := range path_list {
+		if s, err := canonicalizePath(x.i); err != nil || s != x.o {
+			t.Error(x)
+		}
+	}
+}
+
 func Test_isWindows(t *testing.T) {
 	if isWindows() {
 		t.Error("Windows unsupported")
@@ -15,7 +36,7 @@ func Test_getPathSeparator(t *testing.T) {
 	if isWindows() {
 		return
 	}
-	if s := getPathSeparator(); s != "/" {
+	if s := getPathSeparator(); s != '/' {
 		t.Error(s)
 	}
 }

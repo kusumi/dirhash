@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	version          [3]int = [3]int{0, 3, 3}
+	version          [3]int = [3]int{0, 4, 0}
 	optHashVerify    string
 	optHashOnly      bool
 	optIgnoreDot     bool
@@ -113,14 +113,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	if s := getPathSeparator(); s != "/" {
+	if s := getPathSeparator(); s != '/' {
 		fmt.Println("Invalid path separator", s)
 		os.Exit(1)
 	}
 
 	for i, x := range args {
-		err := printInput(x, hash_algo)
-		if err != nil {
+		if x, err := canonicalizePath(x); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		} else if err := printInput(x, hash_algo); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}

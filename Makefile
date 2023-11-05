@@ -4,13 +4,12 @@ bin2:
 	go build -tags squash2
 fmt:
 	go fmt
+clean:
+	go clean
 test1:
 	go test -v -tags squash1
 test2:
 	go test -v -tags squash2
-clean:
-	go clean
-
 lint1:
 	golangci-lint run --build-tags squash1
 lint2:
