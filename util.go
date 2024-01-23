@@ -30,11 +30,9 @@ const (
 func canonicalizePath(l string) (string, error) {
 	if s, err := filepath.EvalSymlinks(l); err != nil {
 		if info, err := os.Lstat(l); err != nil {
-			if info.Mode()&fs.ModeSymlink != 0 {
-				return "", nil // ignore broken symlink
-			} else {
-				return "", err
-			}
+			return "", err
+		} else if info.Mode()&fs.ModeSymlink != 0 {
+			return "", nil // ignore broken symlink
 		} else {
 			return "", err
 		}

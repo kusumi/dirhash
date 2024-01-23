@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	version          [3]int = [3]int{0, 4, 0}
+	version          [3]int = [3]int{0, 4, 1}
 	optHashVerify    string
 	optHashOnly      bool
 	optIgnoreDot     bool

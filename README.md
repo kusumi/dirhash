@@ -1,4 +1,4 @@
-dirhash ([v0.4.0](https://github.com/kusumi/dirhash/releases/tag/v0.4.0))
+dirhash ([v0.4.1](https://github.com/kusumi/dirhash/releases/tag/v0.4.1))
 ========
 
 ## About
@@ -17,11 +17,7 @@ go 1.18 or above
 
     $ make
 
-or
-
-    $ gmake
-
-## [Usage](doc/dirhash.1.txt)
+## Usage
 
     $ ./dirhash
     usage: dirhash: [<options>] <paths>
@@ -51,7 +47,3 @@ or
       -v    Print version and exit
       -verbose
             Enable verbose print
-
-## Resource
-
-[https://github.com/kusumi/dirhash/](https://github.com/kusumi/dirhash/)
