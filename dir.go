@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -13,22 +14,33 @@ var (
 	inputPrefix string
 )
 
-func printInput(f string, hash_algo string) error {
-	// assert exists
-	_, err := pathExists(f)
-	if err != nil {
+func printInput(f string) error {
+	// keep symlink input as is
+	if t, err := getRawFileType(f); err != nil {
 		return err
+	} else if t != SYMLINK {
+		if x, err := canonicalizePath(f); err != nil {
+			return err
+		} else if x == "" {
+			return nil
+		} else {
+			f = x
+		}
+		// assert exists
+		if _, err := pathExists(f); err != nil {
+			return err
+		}
 	}
 
 	// convert input to abs first
-	f, err = filepath.Abs(f)
+	f, err := filepath.Abs(f)
 	if err != nil {
 		return err
 	}
 	assertFilePath(f)
 
 	// keep input prefix based on raw type
-	t, err := getFileType(f)
+	t, err := getRawFileType(f)
 	if err != nil {
 		return err
 	}
@@ -38,6 +50,8 @@ func printInput(f string, hash_algo string) error {
 	case REG:
 		fallthrough
 	case DEVICE:
+		fallthrough
+	case SYMLINK:
 		inputPrefix = filepath.Dir(f)
 	default:
 		return fmt.Errorf("%s has unsupported type %d", f, t)
@@ -52,8 +66,7 @@ func printInput(f string, hash_algo string) error {
 	initSquashBuffer()
 
 	// start directory walk
-	err = filepath.WalkDir(f, getWalkDirHandler(hash_algo))
-	if err != nil {
+	if err := walkDirectory(f); err != nil {
 		return err
 	}
 
@@ -70,8 +83,7 @@ func printInput(f string, hash_algo string) error {
 		if optVerbose {
 			printNumFormatString(uint64(len(b)), "squashed byte")
 		}
-		err = printByte(f, b, hash_algo)
-		if err != nil {
+		if err := printByte(f, b); err != nil {
 			return err
 		}
 	}
@@ -79,75 +91,91 @@ func printInput(f string, hash_algo string) error {
 	return nil
 }
 
-func getWalkDirHandler(hash_algo string) fs.WalkDirFunc {
-	return func(f string, d fs.DirEntry, err error) error {
-		assertFilePath(f)
+func walkDirectory(f string) error {
+	var l []string
+	if err := filepath.WalkDir(f,
+		func(f string, d fs.DirEntry, err error) error {
+			assertFilePath(f)
+			if err != nil {
+				return err
+			}
+			if optSort {
+				l = append(l, f)
+				return nil
+			} else {
+				return walkDirectoryImpl(f)
+			}
+		}); err != nil {
+		return err
+	}
 
-		if err != nil {
-			return err
+	if optSort {
+		sort.Strings(l)
+		for _, f := range l {
+			if err := walkDirectoryImpl(f); err != nil {
+				return err
+			}
 		}
+	}
+	return nil
+}
 
-		t, err := getRawFileType(f)
-		if err != nil {
-			return err
-		}
+func walkDirectoryImpl(f string) error {
+	t, err := getRawFileType(f)
+	if err != nil {
+		return err
+	}
 
-		if testIgnoreEntry(f, t) {
+	if testIgnoreEntry(f, t) {
+		appendStatIgnored(f)
+		return nil
+	}
+
+	// find target if symlink
+	var l string // symlink itself, not its target
+	switch t {
+	case SYMLINK:
+		if optIgnoreSymlink {
 			appendStatIgnored(f)
 			return nil
 		}
-
-		// find target if symlink
-		var l string // symlink itself, not its target
-		switch t {
-		case SYMLINK:
-			if optIgnoreSymlink {
-				appendStatIgnored(f)
-				return nil
-			}
-			if optLstat {
-				return printSymlink(f, hash_algo)
-			}
-			l = f
-			f, err = canonicalizePath(f)
-			if err != nil {
-				return err
-			} else if f == "" {
-				return printInvalid(l)
-			}
-			assert(filepath.IsAbs(f))
-			t, err = getFileType(f)
-			if err != nil {
-				return err
-			}
-			assert(t != SYMLINK) // symlink chains resolved
-		default:
-			l = ""
+		if !optFollowSymlink {
+			return printSymlink(f)
 		}
-
-		switch t {
-		case DIR:
-			// A regular directory isn't considered ignored,
-			// then don't count symlink to directory as ignored.
-			//if len(l) > 0 {
-			//	appendStatIgnored(l)
-			//}
-			return handleDirectory(f, l, hash_algo)
-		case REG:
-			fallthrough
-		case DEVICE:
-			return printFile(f, l, t, hash_algo)
-		case UNSUPPORTED:
-			return printUnsupported(f)
-		case INVALID:
-			return printInvalid(f)
-		default:
-			panicFileType(f, "unknown", t)
+		l = f
+		f, err = canonicalizePath(f)
+		if err != nil {
+			return err
+		} else if f == "" {
+			return printInvalid(l)
 		}
-
-		assert(false)
-		return nil
+		assert(filepath.IsAbs(f))
+		t, err = getFileType(f)
+		if err != nil {
+			return err
+		}
+		assert(t != SYMLINK) // symlink chains resolved
+	default:
+		l = ""
 	}
+
+	switch t {
+	case DIR:
+		return handleDirectory(f, l)
+	case REG:
+		fallthrough
+	case DEVICE:
+		return printFile(f, l, t)
+	case UNSUPPORTED:
+		return printUnsupported(f)
+	case INVALID:
+		return printInvalid(f)
+	default:
+		panicFileType(f, "unknown", t)
+	}
+
+	assert(false)
+	return nil
 }
 
 func testIgnoreEntry(f string, t fileType) bool {
@@ -208,11 +236,11 @@ func getRealPath(f string) string {
 	}
 }
 
-func printByte(f string, inb []byte, hash_algo string) error {
+func printByte(f string, inb []byte) error {
 	assertFilePath(f)
 
 	// get hash value
-	_, b, err := getByteHash(inb, hash_algo)
+	_, b, err := getByteHash(inb, optHashAlgo)
 	if err != nil {
 		return err
 	}
@@ -241,7 +269,7 @@ func printByte(f string, inb []byte, hash_algo string) error {
 	return nil
 }
 
-func handleDirectory(f string, l string, hash_algo string) error {
+func handleDirectory(f string, l string) error {
 	assertFilePath(f)
 	if len(l) > 0 {
 		assertFilePath(l)
@@ -267,7 +295,7 @@ func handleDirectory(f string, l string, hash_algo string) error {
 	// get hash value
 	// path must be relative from input prefix
 	s := trimInputPrefix(f)
-	written, b, err := getStringHash(s, hash_algo)
+	written, b, err := getStringHash(s, optHashAlgo)
 	if err != nil {
 		return err
 	}
@@ -299,7 +327,7 @@ func handleDirectory(f string, l string, hash_algo string) error {
 	return nil
 }
 
-func printFile(f string, l string, t fileType, hash_algo string) error {
+func printFile(f string, l string, t fileType) error {
 	assertFilePath(f)
 	if len(l) > 0 {
 		assertFilePath(l)
@@ -313,7 +341,7 @@ func printFile(f string, l string, t fileType, hash_algo string) error {
 	}
 
 	// get hash value
-	written, b, err := getFileHash(f, hash_algo)
+	written, b, err := getFileHash(f, optHashAlgo)
 	if err != nil {
 		return err
 	}
@@ -368,7 +396,7 @@ func printFile(f string, l string, t fileType, hash_algo string) error {
 	return nil
 }
 
-func printSymlink(f string, hash_algo string) error {
+func printSymlink(f string) error {
 	assertFilePath(f)
 
 	// debug print first
@@ -386,7 +414,7 @@ func printSymlink(f string, hash_algo string) error {
 	}
 
 	// get hash value
-	written, b, err := getStringHash(s, hash_algo)
+	written, b, err := getStringHash(s, optHashAlgo)
 	if err != nil {
 		return err
 	}

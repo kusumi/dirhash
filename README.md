@@ -1,4 +1,4 @@
-dirhash ([v0.4.1](https://github.com/kusumi/dirhash/releases/tag/v0.4.1))
+dirhash ([v0.4.2](https://github.com/kusumi/dirhash/releases/tag/v0.4.2))
 ========
 
 ## About
@@ -25,6 +25,8 @@ go 1.18 or above
             Print file paths in absolute path
       -debug
             Enable debug print
+      -follow_symlink
+            Follow symbolic links unless directory
       -h    Print usage and exit
       -hash_algo string
             Hash algorithm to use (default "sha256")
@@ -40,10 +42,12 @@ go 1.18 or above
             Ignore files start with .
       -ignore_symlink
             Ignore symbolic links
-      -lstat
-            Do not resolve symbolic links
+      -sort
+            Print sorted file paths
       -squash
             Print squashed message digest instead of per file
+      -swap
+            Print file path first in each line
       -v    Print version and exit
       -verbose
             Enable verbose print

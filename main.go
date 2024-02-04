@@ -9,15 +9,18 @@ import (
 )
 
 var (
-	version          [3]int = [3]int{0, 4, 1}
+	version          [3]int = [3]int{0, 4, 2}
+	optHashAlgo      string
 	optHashVerify    string
 	optHashOnly      bool
 	optIgnoreDot     bool
 	optIgnoreDotDir  bool
 	optIgnoreDotFile bool
 	optIgnoreSymlink bool
-	optLstat         bool
+	optFollowSymlink bool
 	optAbs           bool
+	optSwap          bool
+	optSort          bool
 	optSquash        bool
 	optVerbose       bool
 	optDebug         bool
@@ -46,8 +49,10 @@ func main() {
 	opt_ignore_dot_dir := flag.Bool("ignore_dot_dir", false, "Ignore directories start with .")
 	opt_ignore_dot_file := flag.Bool("ignore_dot_file", false, "Ignore files start with .")
 	opt_ignore_symlink := flag.Bool("ignore_symlink", false, "Ignore symbolic links")
-	opt_lstat := flag.Bool("lstat", false, "Do not resolve symbolic links")
+	opt_follow_symlink := flag.Bool("follow_symlink", false, "Follow symbolic links unless directory")
 	opt_abs := flag.Bool("abs", false, "Print file paths in absolute path")
+	opt_swap := flag.Bool("swap", false, "Print file path first in each line")
+	opt_sort := flag.Bool("sort", false, "Print sorted file paths")
 	opt_squash := flag.Bool("squash", false, "Print squashed message digest instead of per file")
 	opt_verbose := flag.Bool("verbose", false, "Enable verbose print")
 	opt_debug := flag.Bool("debug", false, "Enable debug print")
@@ -56,14 +61,17 @@ func main() {
 
 	flag.Parse()
 	args := flag.Args()
+	optHashAlgo = strings.ToLower(*opt_hash_algo)
 	optHashVerify = strings.ToLower(*opt_hash_verify)
 	optHashOnly = *opt_hash_only
 	optIgnoreDot = *opt_ignore_dot
 	optIgnoreDotDir = *opt_ignore_dot_dir
 	optIgnoreDotFile = *opt_ignore_dot_file
 	optIgnoreSymlink = *opt_ignore_symlink
-	optLstat = *opt_lstat
+	optFollowSymlink = *opt_follow_symlink
 	optAbs = *opt_abs
+	optSwap = *opt_swap
+	optSort = *opt_sort
 	optSquash = *opt_squash
 	optVerbose = *opt_verbose
 	optDebug = *opt_debug
@@ -83,18 +91,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	hash_algo := strings.ToLower(*opt_hash_algo)
-	if hash_algo == "" {
+	if optHashAlgo == "" {
 		fmt.Println("No hash algorithm specified")
 		os.Exit(1)
 	}
 	if optVerbose {
 		printVersion()
-		fmt.Println(hash_algo)
+		fmt.Println(optHashAlgo)
 	}
 
-	if newHash(hash_algo) == nil {
-		fmt.Println("Unsupported hash algorithm", hash_algo)
+	if newHash(optHashAlgo) == nil {
+		fmt.Println("Unsupported hash algorithm", optHashAlgo)
 		fmt.Println("Available hash algorithm", getAvailableHashAlgo())
 		os.Exit(1)
 	}
@@ -119,10 +126,7 @@ func main() {
 	}
 
 	for i, x := range args {
-		if x, err := canonicalizePath(x); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		} else if err := printInput(x, hash_algo); err != nil {
+		if err := printInput(x); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}

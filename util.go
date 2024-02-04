@@ -127,6 +127,9 @@ func isValidHexSum(s string) (string, bool) {
 }
 
 func getXsumFormatString(f string, h string) string {
+	if optSwap {
+		h, f = f, h
+	}
 	// compatible with shaXsum commands
 	return fmt.Sprintf("%s  %s", h, f)
 }

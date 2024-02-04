@@ -1,3 +1,11 @@
+v0.4.2
+======
+- Remove -lstat option
+- Add -follow_symlink option
+- Add -sort option
+- Add -swap option
+- Minor fixes
+
 v0.4.1
 ======
 - Minor bug fix
