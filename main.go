@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	version          [3]int = [3]int{0, 4, 2}
+	version          [3]int = [3]int{0, 4, 3}
 	optHashAlgo      string
 	optHashVerify    string
 	optHashOnly      bool

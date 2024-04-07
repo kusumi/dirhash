@@ -134,7 +134,7 @@ func getXsumFormatString(f string, h string) string {
 	return fmt.Sprintf("%s  %s", h, f)
 }
 
-func getNumFormatString(n uint64, msg string) string {
+func getNumFormatString(n uint, msg string) string {
 	if msg == "" {
 		return "???"
 	}
@@ -153,7 +153,7 @@ func getNumFormatString(n uint64, msg string) string {
 	return s
 }
 
-func printNumFormatString(n uint64, msg string) {
+func printNumFormatString(n uint, msg string) {
 	fmt.Println(getNumFormatString(n, msg))
 }
 

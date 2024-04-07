@@ -81,7 +81,7 @@ func printInput(f string) error {
 	if optSquash {
 		b := getSquashBuffer()
 		if optVerbose {
-			printNumFormatString(uint64(len(b)), "squashed byte")
+			printNumFormatString(uint(len(b)), "squashed byte")
 		}
 		if err := printByte(f, b); err != nil {
 			return err

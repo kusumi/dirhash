@@ -13,10 +13,10 @@ var (
 	statInvalid     []string
 	statIgnored     []string
 
-	writtenDirectory uint64 // hashed
-	writtenRegular   uint64 // hashed
-	writtenDevice    uint64 // hashed
-	writtenSymlink   uint64 // hashed
+	writtenDirectory uint // hashed
+	writtenRegular   uint // hashed
+	writtenDevice    uint // hashed
+	writtenSymlink   uint // hashed
 )
 
 func initStat() {
@@ -35,37 +35,37 @@ func initStat() {
 }
 
 // num stat
-func numStatTotal() uint64 {
+func numStatTotal() uint {
 	return numStatDirectory() + numStatRegular() + numStatDevice() + numStatSymlink()
 }
 
-func numStatDirectory() uint64 {
-	return uint64(len(statDirectory))
+func numStatDirectory() uint {
+	return uint(len(statDirectory))
 }
 
-func numStatRegular() uint64 {
-	return uint64(len(statRegular))
+func numStatRegular() uint {
+	return uint(len(statRegular))
 }
 
-func numStatDevice() uint64 {
-	return uint64(len(statDevice))
+func numStatDevice() uint {
+	return uint(len(statDevice))
 }
 
-func numStatSymlink() uint64 {
-	return uint64(len(statSymlink))
+func numStatSymlink() uint {
+	return uint(len(statSymlink))
 }
 
 /*
-func numStatUnsupported() uint64 {
-	return uint64(len(statUnsupported))
+func numStatUnsupported() uint {
+	return uint(len(statUnsupported))
 }
 
-func numStatInvalid() uint64 {
-	return uint64(len(statInvalid))
+func numStatInvalid() uint {
+	return uint(len(statInvalid))
 }
 
-func numStatIgnored() uint64 {
-	return uint64(len(statIgnored))
+func numStatIgnored() uint {
+	return uint(len(statIgnored))
 }
 */
 
@@ -136,7 +136,7 @@ func printStat(l []string, msg string) {
 	if len(l) == 0 {
 		return
 	}
-	printNumFormatString(uint64(len(l)), msg)
+	printNumFormatString(uint(len(l)), msg)
 
 	for _, v := range l {
 		f := getRealPath(v)
@@ -155,23 +155,23 @@ func printStat(l []string, msg string) {
 }
 
 // num written
-func numWrittenTotal() uint64 {
+func numWrittenTotal() uint {
 	return numWrittenDirectory() + numWrittenRegular() + numWrittenDevice() + numWrittenSymlink()
 }
 
-func numWrittenDirectory() uint64 {
+func numWrittenDirectory() uint {
 	return writtenDirectory
 }
 
-func numWrittenRegular() uint64 {
+func numWrittenRegular() uint {
 	return writtenRegular
 }
 
-func numWrittenDevice() uint64 {
+func numWrittenDevice() uint {
 	return writtenDevice
 }
 
-func numWrittenSymlink() uint64 {
+func numWrittenSymlink() uint {
 	return writtenSymlink
 }
 
@@ -180,17 +180,17 @@ func appendWrittenTotal(written uint64) {
 }
 
 func appendWrittenDirectory(written uint64) {
-	writtenDirectory += written
+	writtenDirectory += uint(written)
 }
 
 func appendWrittenRegular(written uint64) {
-	writtenRegular += written
+	writtenRegular += uint(written)
 }
 
 func appendWrittenDevice(written uint64) {
-	writtenDevice += written
+	writtenDevice += uint(written)
 }
 
 func appendWrittenSymlink(written uint64) {
-	writtenSymlink += written
+	writtenSymlink += uint(written)
 }

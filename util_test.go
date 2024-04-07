@@ -170,7 +170,7 @@ func Test_isValidHexSum(t *testing.T) {
 
 func Test_getNumFormatString(t *testing.T) {
 	num_format_list := []struct {
-		n      uint64
+		n      uint
 		msg    string
 		result string
 	}{
