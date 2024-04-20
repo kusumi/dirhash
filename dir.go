@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/fs"
-	"os"
 	"path"
 	"path/filepath"
 	"sort"
@@ -21,7 +20,7 @@ func printInput(f string) error {
 	} else if t != SYMLINK {
 		if x, err := canonicalizePath(f); err != nil {
 			return err
-		} else if x == "" {
+		} else if len(x) == 0 {
 			return nil
 		} else {
 			f = x
@@ -117,6 +116,7 @@ func walkDirectory(f string) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -132,7 +132,7 @@ func walkDirectoryImpl(f string) error {
 	}
 
 	// find target if symlink
-	var l string // symlink itself, not its target
+	var x, l string // l is symlink itself, not its target
 	switch t {
 	case SYMLINK:
 		if optIgnoreSymlink {
@@ -142,36 +142,37 @@ func walkDirectoryImpl(f string) error {
 		if !optFollowSymlink {
 			return printSymlink(f)
 		}
-		l = f
-		f, err = canonicalizePath(f)
+		x, err = canonicalizePath(f)
 		if err != nil {
 			return err
-		} else if f == "" {
-			return printInvalid(l)
+		} else if len(x) == 0 {
+			return printInvalid(f)
 		}
-		assert(filepath.IsAbs(f))
-		t, err = getFileType(f)
+		assert(filepath.IsAbs(x))
+		t, err = getFileType(x) // update type
 		if err != nil {
 			return err
 		}
 		assert(t != SYMLINK) // symlink chains resolved
+		l = f
 	default:
+		x = f
 		l = ""
 	}
 
 	switch t {
 	case DIR:
-		return handleDirectory(f, l)
+		return handleDirectory(x, l)
 	case REG:
 		fallthrough
 	case DEVICE:
-		return printFile(f, l, t)
+		return printFile(x, l, t)
 	case UNSUPPORTED:
-		return printUnsupported(f)
+		return printUnsupported(x)
 	case INVALID:
-		return printInvalid(f)
+		return printInvalid(x)
 	default:
-		panicFileType(f, "unknown", t)
+		panicFileType(x, "unknown", t)
 	}
 
 	assert(false)
@@ -248,7 +249,7 @@ func printByte(f string, inb []byte) error {
 	hex_sum := getHexSum(b)
 
 	// verify hash value if specified
-	if optHashVerify != "" {
+	if len(optHashVerify) != 0 {
 		if optHashVerify != hex_sum {
 			return nil
 		}
@@ -293,7 +294,7 @@ func handleDirectory(f string, l string) error {
 	}
 
 	// get hash value
-	// path must be relative from input prefix
+	// path must be relative to input prefix
 	s := trimInputPrefix(f)
 	written, b, err := getStringHash(s, optHashAlgo)
 	if err != nil {
@@ -363,7 +364,7 @@ func printFile(f string, l string, t fileType) error {
 	}
 
 	// verify hash value if specified
-	if optHashVerify != "" {
+	if len(optHashVerify) != 0 {
 		if optHashVerify != hex_sum {
 			return nil
 		}
@@ -406,15 +407,8 @@ func printSymlink(f string) error {
 		}
 	}
 
-	// get a symlink string to get hash value
-	// must keep relative symlink path as is
-	s, err := os.Readlink(f)
-	if err != nil {
-		return err
-	}
-
-	// get hash value
-	written, b, err := getStringHash(s, optHashAlgo)
+	// get hash value of symlink base name
+	written, b, err := getStringHash(path.Base(f), optHashAlgo)
 	if err != nil {
 		return err
 	}
@@ -428,7 +422,7 @@ func printSymlink(f string) error {
 	appendWrittenSymlink(written)
 
 	// verify hash value if specified
-	if optHashVerify != "" {
+	if len(optHashVerify) != 0 {
 		if optHashVerify != hex_sum {
 			return nil
 		}
@@ -442,7 +436,6 @@ func printSymlink(f string) error {
 			fmt.Println(hex_sum)
 		}
 	} else {
-		// hash value is from s, but print realf path for clarity
 		if realf := getRealPath(f); optSquash {
 			updateSquashBuffer(append([]byte(realf), b...))
 		} else {

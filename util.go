@@ -50,21 +50,19 @@ func getPathSeparator() rune {
 }
 
 func getRawFileType(f string) (fileType, error) {
-	info, err := os.Lstat(f)
-	if err != nil {
+	if info, err := os.Lstat(f); err != nil {
 		return INVALID, err
+	} else {
+		return getModeType(info.Mode())
 	}
-
-	return getModeType(info.Mode())
 }
 
 func getFileType(f string) (fileType, error) {
-	info, err := os.Stat(f)
-	if err != nil {
+	if info, err := os.Stat(f); err != nil {
 		return INVALID, err
+	} else {
+		return getModeType(info.Mode())
 	}
-
-	return getModeType(info.Mode())
 }
 
 func getFileTypeString(t fileType) string {
@@ -97,9 +95,9 @@ func getModeType(m fs.FileMode) (fileType, error) {
 		return DEVICE, nil
 	} else if m&fs.ModeSymlink != 0 {
 		return SYMLINK, nil
+	} else {
+		return UNSUPPORTED, nil
 	}
-
-	return UNSUPPORTED, nil
 }
 
 func pathExists(f string) (bool, error) {
@@ -135,7 +133,7 @@ func getXsumFormatString(f string, h string) string {
 }
 
 func getNumFormatString(n uint, msg string) string {
-	if msg == "" {
+	if len(msg) == 0 {
 		return "???"
 	}
 
@@ -149,7 +147,6 @@ func getNumFormatString(n uint, msg string) string {
 			s += "s"
 		}
 	}
-
 	return s
 }
 
@@ -168,11 +165,9 @@ func kassert(c bool, err interface{}) {
 }
 
 func panicFileType(f string, how string, t fileType) {
-	var s string
-	if f != "" {
-		s = fmt.Sprintf("%s has %s file type %d", f, how, t)
+	if len(f) != 0 {
+		panic(fmt.Sprintf("%s has %s file type %d", f, how, t))
 	} else {
-		s = fmt.Sprintf("%s file type %d", how, t)
+		panic(fmt.Sprintf("%s file type %d", how, t))
 	}
-	panic(s)
 }

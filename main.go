@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	version          [3]int = [3]int{0, 4, 3}
+	version          [3]int = [3]int{0, 4, 4}
 	optHashAlgo      string
 	optHashVerify    string
 	optHashOnly      bool
@@ -91,12 +91,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if optHashAlgo == "" {
+	if len(optHashAlgo) == 0 {
 		fmt.Println("No hash algorithm specified")
 		os.Exit(1)
 	}
 	if optVerbose {
-		printVersion()
 		fmt.Println(optHashAlgo)
 	}
 
@@ -106,7 +105,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if optHashVerify != "" {
+	if len(optHashVerify) != 0 {
 		var valid bool
 		if optHashVerify, valid = isValidHexSum(optHashVerify); !valid {
 			fmt.Println("Invalid verify string", optHashVerify)
