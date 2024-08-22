@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	version          [3]int = [3]int{0, 4, 4}
+	version          [3]int = [3]int{0, 4, 5}
 	optHashAlgo      string
 	optHashVerify    string
 	optHashOnly      bool
@@ -42,46 +42,46 @@ func usage(progname string) {
 func main() {
 	progname := path.Base(os.Args[0])
 
-	opt_hash_algo := flag.String("hash_algo", SHA256, "Hash algorithm to use")
-	opt_hash_verify := flag.String("hash_verify", "", "Message digest to verify in hex string")
-	opt_hash_only := flag.Bool("hash_only", false, "Do not print file paths")
-	opt_ignore_dot := flag.Bool("ignore_dot", false, "Ignore entries start with .")
-	opt_ignore_dot_dir := flag.Bool("ignore_dot_dir", false, "Ignore directories start with .")
-	opt_ignore_dot_file := flag.Bool("ignore_dot_file", false, "Ignore files start with .")
-	opt_ignore_symlink := flag.Bool("ignore_symlink", false, "Ignore symbolic links")
-	opt_follow_symlink := flag.Bool("follow_symlink", false, "Follow symbolic links unless directory")
-	opt_abs := flag.Bool("abs", false, "Print file paths in absolute path")
-	opt_swap := flag.Bool("swap", false, "Print file path first in each line")
-	opt_sort := flag.Bool("sort", false, "Print sorted file paths")
-	opt_squash := flag.Bool("squash", false, "Print squashed message digest instead of per file")
-	opt_verbose := flag.Bool("verbose", false, "Enable verbose print")
-	opt_debug := flag.Bool("debug", false, "Enable debug print")
-	opt_version := flag.Bool("v", false, "Print version and exit")
-	opt_help_h := flag.Bool("h", false, "Print usage and exit")
+	optHashAlgoAddr := flag.String("hash_algo", SHA256, "Hash algorithm to use")
+	optHashVerifyAddr := flag.String("hash_verify", "", "Message digest to verify in hex string")
+	optHashOnlyAddr := flag.Bool("hash_only", false, "Do not print file paths")
+	optIgnoreDotAddr := flag.Bool("ignore_dot", false, "Ignore entries start with .")
+	optIgnoreDotDirAddr := flag.Bool("ignore_dot_dir", false, "Ignore directories start with .")
+	optIgnoreDotFileAddr := flag.Bool("ignore_dot_file", false, "Ignore files start with .")
+	optIgnoreSymlinkAddr := flag.Bool("ignore_symlink", false, "Ignore symbolic links")
+	optFollowSymlinkAddr := flag.Bool("follow_symlink", false, "Follow symbolic links unless directory")
+	optAbsAddr := flag.Bool("abs", false, "Print file paths in absolute path")
+	optSwapAddr := flag.Bool("swap", false, "Print file path first in each line")
+	optSortAddr := flag.Bool("sort", false, "Print sorted file paths")
+	optSquashAddr := flag.Bool("squash", false, "Print squashed message digest instead of per file")
+	optVerboseAddr := flag.Bool("verbose", false, "Enable verbose print")
+	optDebugAddr := flag.Bool("debug", false, "Enable debug print")
+	optVersionAddr := flag.Bool("v", false, "Print version and exit")
+	optHelpAddr := flag.Bool("h", false, "Print usage and exit")
 
 	flag.Parse()
 	args := flag.Args()
-	optHashAlgo = strings.ToLower(*opt_hash_algo)
-	optHashVerify = strings.ToLower(*opt_hash_verify)
-	optHashOnly = *opt_hash_only
-	optIgnoreDot = *opt_ignore_dot
-	optIgnoreDotDir = *opt_ignore_dot_dir
-	optIgnoreDotFile = *opt_ignore_dot_file
-	optIgnoreSymlink = *opt_ignore_symlink
-	optFollowSymlink = *opt_follow_symlink
-	optAbs = *opt_abs
-	optSwap = *opt_swap
-	optSort = *opt_sort
-	optSquash = *opt_squash
-	optVerbose = *opt_verbose
-	optDebug = *opt_debug
+	optHashAlgo = strings.ToLower(*optHashAlgoAddr)
+	optHashVerify = strings.ToLower(*optHashVerifyAddr)
+	optHashOnly = *optHashOnlyAddr
+	optIgnoreDot = *optIgnoreDotAddr
+	optIgnoreDotDir = *optIgnoreDotDirAddr
+	optIgnoreDotFile = *optIgnoreDotFileAddr
+	optIgnoreSymlink = *optIgnoreSymlinkAddr
+	optFollowSymlink = *optFollowSymlinkAddr
+	optAbs = *optAbsAddr
+	optSwap = *optSwapAddr
+	optSort = *optSortAddr
+	optSquash = *optSquashAddr
+	optVerbose = *optVerboseAddr
+	optDebug = *optDebugAddr
 
-	if *opt_version {
+	if *optVersionAddr {
 		printVersion()
 		os.Exit(1)
 	}
 
-	if *opt_help_h {
+	if *optHelpAddr {
 		usage(progname)
 		os.Exit(1)
 	}

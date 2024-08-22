@@ -6,7 +6,7 @@ import (
 )
 
 func Test_canonicalizePath(t *testing.T) {
-	path_list := []struct {
+	pathList := []struct {
 		i string
 		o string
 	}{
@@ -19,7 +19,7 @@ func Test_canonicalizePath(t *testing.T) {
 		{"/root/..", "/"},
 		{"/root/../dev", "/dev"},
 	}
-	for _, x := range path_list {
+	for _, x := range pathList {
 		if s, err := canonicalizePath(x.i); err != nil || s != x.o {
 			t.Error(x)
 		}
@@ -42,55 +42,55 @@ func Test_getPathSeparator(t *testing.T) {
 }
 
 var (
-	dir_list = []string{
+	dirList = []string{
 		".",
 		"..",
 		"/",
 		"/dev"}
-	invalid_list = []string{
+	invalidList = []string{
 		"",
 		"516e7cb4-6ecf-11d6-8ff8-00022d09712b"}
 )
 
 func Test_getRawFileType(t *testing.T) {
-	for _, f := range dir_list {
-		if ret, err := getRawFileType(f); ret != DIR || err != nil {
+	for _, f := range dirList {
+		if ret, err := getRawFileType(f); ret != typeDir || err != nil {
 			t.Error(f)
 		}
 	}
-	for _, f := range invalid_list {
-		if ret, _ := getRawFileType(f); ret != INVALID {
+	for _, f := range invalidList {
+		if ret, _ := getRawFileType(f); ret != typeInvalid {
 			t.Error(f)
 		}
 	}
 }
 
 func Test_getFileType(t *testing.T) {
-	for _, f := range dir_list {
-		if ret, err := getFileType(f); ret != DIR || err != nil {
+	for _, f := range dirList {
+		if ret, err := getFileType(f); ret != typeDir || err != nil {
 			t.Error(f)
 		}
 	}
-	for _, f := range invalid_list {
-		if ret, _ := getFileType(f); ret != INVALID {
+	for _, f := range invalidList {
+		if ret, _ := getFileType(f); ret != typeInvalid {
 			t.Error(f)
 		}
 	}
 }
 
 func Test_getFileTypeString(t *testing.T) {
-	file_type_list := []struct {
+	fileTypeList := []struct {
 		typ fileType
 		str string
 	}{
-		{DIR, "directory"},
-		{REG, "regular file"},
-		{DEVICE, "device"},
-		{SYMLINK, "symlink"},
-		{UNSUPPORTED, "unsupported file"},
-		{INVALID, "invalid file"},
+		{typeDir, "directory"},
+		{typeReg, "regular file"},
+		{typeDevice, "device"},
+		{typeSymlink, "symlink"},
+		{typeUnsupported, "unsupported file"},
+		{typeInvalid, "invalid file"},
 	}
-	for _, x := range file_type_list {
+	for _, x := range fileTypeList {
 		if getFileTypeString(x.typ) != x.str {
 			t.Error(x)
 		}
@@ -98,12 +98,12 @@ func Test_getFileTypeString(t *testing.T) {
 }
 
 func Test_pathExists(t *testing.T) {
-	for _, f := range dir_list {
+	for _, f := range dirList {
 		if exists, err := pathExists(f); !exists || err != nil {
 			t.Error(f)
 		}
 	}
-	for _, f := range invalid_list {
+	for _, f := range invalidList {
 		if exists, err := pathExists(f); exists || err == nil {
 			t.Error(f)
 		}
@@ -111,7 +111,7 @@ func Test_pathExists(t *testing.T) {
 }
 
 func Test_isValidHexSum(t *testing.T) {
-	valid_list := []string{
+	validList := []string{
 		"00000000000000000000000000000000",
 		"11111111111111111111111111111111",
 		"22222222222222222222222222222222",
@@ -139,13 +139,13 @@ func Test_isValidHexSum(t *testing.T) {
 		"0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
 		"0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		"0x0123456789ABCDEFabcdef0123456789ABCDEFabcdef"}
-	for _, s := range valid_list {
+	for _, s := range validList {
 		if _, valid := isValidHexSum(s); !valid {
 			t.Error(s)
 		}
 	}
 
-	invalid_list := []string{
+	invalidList := []string{
 		"gggggggggggggggggggggggggggggggg",
 		"GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
 		"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
@@ -161,7 +161,7 @@ func Test_isValidHexSum(t *testing.T) {
 		"0x",
 		"0",
 		""}
-	for _, s := range invalid_list {
+	for _, s := range invalidList {
 		if _, valid := isValidHexSum(s); valid {
 			t.Error(s)
 		}
@@ -169,7 +169,7 @@ func Test_isValidHexSum(t *testing.T) {
 }
 
 func Test_getNumFormatString(t *testing.T) {
-	num_format_list := []struct {
+	numFormatList := []struct {
 		n      uint
 		msg    string
 		result string
@@ -181,7 +181,7 @@ func Test_getNumFormatString(t *testing.T) {
 		{1, "file", "1 file"},
 		{2, "file", "2 files"},
 	}
-	for _, x := range num_format_list {
+	for _, x := range numFormatList {
 		if getNumFormatString(x.n, x.msg) != x.result {
 			t.Error(x)
 		}

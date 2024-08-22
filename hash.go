@@ -47,8 +47,8 @@ func getAvailableHashAlgo() []string {
 	}
 }
 
-func newHash(hash_algo string) hash.Hash {
-	switch hash_algo {
+func newHash(hashAlgo string) hash.Hash {
+	switch hashAlgo {
 	case MD5:
 		return md5.New()
 	case SHA1:
@@ -78,7 +78,7 @@ func newHash(hash_algo string) hash.Hash {
 	}
 }
 
-func getFileHash(f string, hash_algo string) (uint64, []byte, error) {
+func getFileHash(f string, hashAlgo string) (uint64, []byte, error) {
 	fp, err := os.Open(f)
 	if err != nil {
 		return 0, nil, err
@@ -89,36 +89,36 @@ func getFileHash(f string, hash_algo string) (uint64, []byte, error) {
 	if err != nil {
 		return 0, nil, err
 	}
-	stat_size := uint64(info.Size())
+	statSize := uint64(info.Size())
 
-	written, b, err := getHash(fp, hash_algo)
-	assert(written == stat_size || stat_size == 0)
+	written, b, err := getHash(fp, hashAlgo)
+	assert(written == statSize || statSize == 0)
 
 	return written, b, err
 }
 
-func getByteHash(s []byte, hash_algo string) (uint64, []byte, error) {
+func getByteHash(s []byte, hashAlgo string) (uint64, []byte, error) {
 	r := bytes.NewReader(s)
 
-	written, b, err := getHash(r, hash_algo)
+	written, b, err := getHash(r, hashAlgo)
 	assert(written == uint64(len(s)))
 
 	return written, b, err
 }
 
-func getStringHash(s string, hash_algo string) (uint64, []byte, error) {
+func getStringHash(s string, hashAlgo string) (uint64, []byte, error) {
 	r := strings.NewReader(s)
 
-	written, b, err := getHash(r, hash_algo)
+	written, b, err := getHash(r, hashAlgo)
 	assert(written == uint64(len(s)))
 
 	return written, b, err
 }
 
-func getHash(r io.Reader, hash_algo string) (uint64, []byte, error) {
-	h := newHash(hash_algo)
+func getHash(r io.Reader, hashAlgo string) (uint64, []byte, error) {
+	h := newHash(hashAlgo)
 	if h == nil {
-		return 0, nil, fmt.Errorf("invalid hash algorithm %s", hash_algo)
+		return 0, nil, fmt.Errorf("invalid hash algorithm %s", hashAlgo)
 	}
 
 	written, err := io.Copy(h, r)

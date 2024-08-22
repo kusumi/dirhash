@@ -17,7 +17,7 @@ func printInput(f string) error {
 	// keep symlink input as is
 	if t, err := getRawFileType(f); err != nil {
 		return err
-	} else if t != SYMLINK {
+	} else if t != typeSymlink {
 		if x, err := canonicalizePath(f); err != nil {
 			return err
 		} else if len(x) == 0 {
@@ -44,13 +44,13 @@ func printInput(f string) error {
 		return err
 	}
 	switch t {
-	case DIR:
+	case typeDir:
 		inputPrefix = f
-	case REG:
+	case typeReg:
 		fallthrough
-	case DEVICE:
+	case typeDevice:
 		fallthrough
-	case SYMLINK:
+	case typeSymlink:
 		inputPrefix = filepath.Dir(f)
 	default:
 		return fmt.Errorf("%s has unsupported type %d", f, t)
@@ -58,7 +58,7 @@ func printInput(f string) error {
 
 	// prefix is a directory
 	t, _ = getFileType(inputPrefix)
-	assert(t == DIR)
+	assert(t == typeDir)
 
 	// initialize global resource
 	initStat()
@@ -134,7 +134,7 @@ func walkDirectoryImpl(f string) error {
 	// find target if symlink
 	var x, l string // l is symlink itself, not its target
 	switch t {
-	case SYMLINK:
+	case typeSymlink:
 		if optIgnoreSymlink {
 			appendStatIgnored(f)
 			return nil
@@ -153,7 +153,7 @@ func walkDirectoryImpl(f string) error {
 		if err != nil {
 			return err
 		}
-		assert(t != SYMLINK) // symlink chains resolved
+		assert(t != typeSymlink) // symlink chains resolved
 		l = f
 	default:
 		x = f
@@ -161,15 +161,15 @@ func walkDirectoryImpl(f string) error {
 	}
 
 	switch t {
-	case DIR:
+	case typeDir:
 		return handleDirectory(x, l)
-	case REG:
+	case typeReg:
 		fallthrough
-	case DEVICE:
+	case typeDevice:
 		return printFile(x, l, t)
-	case UNSUPPORTED:
+	case typeUnsupported:
 		return printUnsupported(x)
-	case INVALID:
+	case typeInvalid:
 		return printInvalid(x)
 	default:
 		panicFileType(x, "unknown", t)
@@ -183,31 +183,31 @@ func testIgnoreEntry(f string, t fileType) bool {
 	assert(filepath.IsAbs(f))
 
 	// only non directory types count
-	if t == DIR {
+	if t == typeDir {
 		return false
 	}
 
-	base_starts_with_dot := strings.HasPrefix(path.Base(f), ".")
-	path_contains_slash_dot := strings.Contains(f, "/.")
+	baseStartsWithDot := strings.HasPrefix(path.Base(f), ".")
+	pathContainsSlashDot := strings.Contains(f, "/.")
 
 	// ignore . directories if specified
 	if optIgnoreDotDir {
-		if !base_starts_with_dot && path_contains_slash_dot {
+		if !baseStartsWithDot && pathContainsSlashDot {
 			return true
 		}
 	}
 
 	// ignore . regular files if specified
 	if optIgnoreDotFile {
-		// XXX limit to REG ?
-		if base_starts_with_dot {
+		// XXX limit to typeReg ?
+		if baseStartsWithDot {
 			return true
 		}
 	}
 
 	// ignore . entries if specified
 	if optIgnoreDot {
-		if base_starts_with_dot || path_contains_slash_dot {
+		if baseStartsWithDot || pathContainsSlashDot {
 			return true
 		}
 	}
@@ -246,24 +246,24 @@ func printByte(f string, inb []byte) error {
 		return err
 	}
 	assert(len(b) > 0)
-	hex_sum := getHexSum(b)
+	hexSum := getHexSum(b)
 
 	// verify hash value if specified
 	if len(optHashVerify) != 0 {
-		if optHashVerify != hex_sum {
+		if optHashVerify != hexSum {
 			return nil
 		}
 	}
 
 	if optHashOnly {
-		fmt.Println(hex_sum)
+		fmt.Println(hexSum)
 	} else {
 		// no space between two
 		s := fmt.Sprintf("[%s][v%d]", squashLabel, squashVersion)
 		if realf := getRealPath(f); realf == "." {
-			fmt.Println(hex_sum + s)
+			fmt.Println(hexSum + s)
 		} else {
-			fmt.Println(getXsumFormatString(realf, hex_sum) + s)
+			fmt.Println(getXsumFormatString(realf, hexSum) + s)
 		}
 	}
 
@@ -288,7 +288,7 @@ func handleDirectory(f string, l string) error {
 
 	// debug print first
 	if optDebug {
-		if err := printDebug(f, DIR); err != nil {
+		if err := printDebug(f, typeDir); err != nil {
 			return err
 		}
 	}
@@ -347,16 +347,16 @@ func printFile(f string, l string, t fileType) error {
 		return err
 	}
 	assert(len(b) > 0)
-	hex_sum := getHexSum(b)
+	hexSum := getHexSum(b)
 
 	// count this file
 	appendStatTotal()
 	appendWrittenTotal(written)
 	switch t {
-	case REG:
+	case typeReg:
 		appendStatRegular(f)
 		appendWrittenRegular(written)
-	case DEVICE:
+	case typeDevice:
 		appendStatDevice(f)
 		appendWrittenDevice(written)
 	default:
@@ -365,7 +365,7 @@ func printFile(f string, l string, t fileType) error {
 
 	// verify hash value if specified
 	if len(optHashVerify) != 0 {
-		if optHashVerify != hex_sum {
+		if optHashVerify != hexSum {
 			return nil
 		}
 	}
@@ -375,7 +375,7 @@ func printFile(f string, l string, t fileType) error {
 		if optSquash {
 			updateSquashBuffer(b)
 		} else {
-			fmt.Println(hex_sum)
+			fmt.Println(hexSum)
 		}
 	} else {
 		// make link -> target format if symlink
@@ -390,7 +390,7 @@ func printFile(f string, l string, t fileType) error {
 		if optSquash {
 			updateSquashBuffer(append([]byte(realf), b...))
 		} else {
-			fmt.Println(getXsumFormatString(realf, hex_sum))
+			fmt.Println(getXsumFormatString(realf, hexSum))
 		}
 	}
 
@@ -402,7 +402,7 @@ func printSymlink(f string) error {
 
 	// debug print first
 	if optDebug {
-		if err := printDebug(f, SYMLINK); err != nil {
+		if err := printDebug(f, typeSymlink); err != nil {
 			return err
 		}
 	}
@@ -413,7 +413,7 @@ func printSymlink(f string) error {
 		return err
 	}
 	assert(len(b) > 0)
-	hex_sum := getHexSum(b)
+	hexSum := getHexSum(b)
 
 	// count this file
 	appendStatTotal()
@@ -423,7 +423,7 @@ func printSymlink(f string) error {
 
 	// verify hash value if specified
 	if len(optHashVerify) != 0 {
-		if optHashVerify != hex_sum {
+		if optHashVerify != hexSum {
 			return nil
 		}
 	}
@@ -433,13 +433,13 @@ func printSymlink(f string) error {
 		if optSquash {
 			updateSquashBuffer(b)
 		} else {
-			fmt.Println(hex_sum)
+			fmt.Println(hexSum)
 		}
 	} else {
 		if realf := getRealPath(f); optSquash {
 			updateSquashBuffer(append([]byte(realf), b...))
 		} else {
-			fmt.Println(getXsumFormatString(realf, hex_sum))
+			fmt.Println(getXsumFormatString(realf, hexSum))
 		}
 	}
 
@@ -448,7 +448,7 @@ func printSymlink(f string) error {
 
 func printUnsupported(f string) error {
 	if optDebug {
-		if err := printDebug(f, UNSUPPORTED); err != nil {
+		if err := printDebug(f, typeUnsupported); err != nil {
 			return err
 		}
 	}
@@ -459,7 +459,7 @@ func printUnsupported(f string) error {
 
 func printInvalid(f string) error {
 	if optDebug {
-		if err := printDebug(f, INVALID); err != nil {
+		if err := printDebug(f, typeInvalid); err != nil {
 			return err
 		}
 	}
@@ -493,19 +493,19 @@ func printVerboseStat() {
 	assert(a0+a1+a2+a3 == numStatTotal())
 	if a0 > 0 {
 		fmt.Print(indent)
-		printNumFormatString(a0, DIR_STR)
+		printNumFormatString(a0, strDir)
 	}
 	if a1 > 0 {
 		fmt.Print(indent)
-		printNumFormatString(a1, REG_STR)
+		printNumFormatString(a1, strReg)
 	}
 	if a2 > 0 {
 		fmt.Print(indent)
-		printNumFormatString(a2, DEVICE_STR)
+		printNumFormatString(a2, strDevice)
 	}
 	if a3 > 0 {
 		fmt.Print(indent)
-		printNumFormatString(a3, SYMLINK_STR)
+		printNumFormatString(a3, strSymlink)
 	}
 
 	printNumFormatString(numWrittenTotal(), "byte")
@@ -516,19 +516,19 @@ func printVerboseStat() {
 	assert(b0+b1+b2+b3 == numWrittenTotal())
 	if b0 > 0 {
 		fmt.Print(indent)
-		printNumFormatString(b0, DIR_STR+" byte")
+		printNumFormatString(b0, strDir+" byte")
 	}
 	if b1 > 0 {
 		fmt.Print(indent)
-		printNumFormatString(b1, REG_STR+" byte")
+		printNumFormatString(b1, strReg+" byte")
 	}
 	if b2 > 0 {
 		fmt.Print(indent)
-		printNumFormatString(b2, DEVICE_STR+" byte")
+		printNumFormatString(b2, strDevice+" byte")
 	}
 	if b3 > 0 {
 		fmt.Print(indent)
-		printNumFormatString(b3, SYMLINK_STR+" byte")
+		printNumFormatString(b3, strSymlink+" byte")
 	}
 
 	printStatIgnored()

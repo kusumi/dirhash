@@ -12,19 +12,19 @@ import (
 type fileType int
 
 const (
-	DIR fileType = iota
-	REG
-	DEVICE
-	SYMLINK
-	UNSUPPORTED
-	INVALID
+	typeDir fileType = iota
+	typeReg
+	typeDevice
+	typeSymlink
+	typeUnsupported
+	typeInvalid
 
-	DIR_STR         = "directory"
-	REG_STR         = "regular file"
-	DEVICE_STR      = "device"
-	SYMLINK_STR     = "symlink"
-	UNSUPPORTED_STR = "unsupported file"
-	INVALID_STR     = "invalid file"
+	strDir         = "directory"
+	strReg         = "regular file"
+	strDevice      = "device"
+	strSymlink     = "symlink"
+	strUnsupported = "unsupported file"
+	strInvalid     = "invalid file"
 )
 
 func canonicalizePath(l string) (string, error) {
@@ -51,7 +51,7 @@ func getPathSeparator() rune {
 
 func getRawFileType(f string) (fileType, error) {
 	if info, err := os.Lstat(f); err != nil {
-		return INVALID, err
+		return typeInvalid, err
 	} else {
 		return getModeType(info.Mode())
 	}
@@ -59,7 +59,7 @@ func getRawFileType(f string) (fileType, error) {
 
 func getFileType(f string) (fileType, error) {
 	if info, err := os.Stat(f); err != nil {
-		return INVALID, err
+		return typeInvalid, err
 	} else {
 		return getModeType(info.Mode())
 	}
@@ -67,18 +67,18 @@ func getFileType(f string) (fileType, error) {
 
 func getFileTypeString(t fileType) string {
 	switch t {
-	case DIR:
-		return DIR_STR
-	case REG:
-		return REG_STR
-	case DEVICE:
-		return DEVICE_STR
-	case SYMLINK:
-		return SYMLINK_STR
-	case UNSUPPORTED:
-		return UNSUPPORTED_STR
-	case INVALID:
-		return INVALID_STR
+	case typeDir:
+		return strDir
+	case typeReg:
+		return strReg
+	case typeDevice:
+		return strDevice
+	case typeSymlink:
+		return strSymlink
+	case typeUnsupported:
+		return strUnsupported
+	case typeInvalid:
+		return strInvalid
 	default:
 		panicFileType("", "unknown", t)
 		return "" // not reached
@@ -87,16 +87,16 @@ func getFileTypeString(t fileType) string {
 
 func getModeType(m fs.FileMode) (fileType, error) {
 	if m.IsDir() {
-		return DIR, nil
+		return typeDir, nil
 	} else if m.IsRegular() {
-		return REG, nil
+		return typeReg, nil
 	} else if m&fs.ModeDevice != 0 {
 		// XXX assuming blk on Linux, chr on *BSD
-		return DEVICE, nil
+		return typeDevice, nil
 	} else if m&fs.ModeSymlink != 0 {
-		return SYMLINK, nil
+		return typeSymlink, nil
 	} else {
-		return UNSUPPORTED, nil
+		return typeUnsupported, nil
 	}
 }
 
@@ -139,7 +139,7 @@ func getNumFormatString(n uint, msg string) string {
 
 	s := fmt.Sprintf("%d %s", n, msg)
 	if n > 1 {
-		if msg == DIR_STR {
+		if msg == strDir {
 			s = s[:len(s)-1]
 			s += "ies"
 			assert(strings.HasSuffix(s, "directories"))

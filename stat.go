@@ -104,28 +104,28 @@ func appendStatIgnored(f string) {
 // print stat
 /*
 func printStatDirectory() {
-	printStat(statDirectory, DIR_STR)
+	printStat(statDirectory, strDir)
 }
 
 func printStatRegular() {
-	printStat(statRegular, REG_STR)
+	printStat(statRegular, strReg)
 }
 
 func printStatDevice() {
-	printStat(statDevice, DEVICE_STR)
+	printStat(statDevice, strDevice)
 }
 
 func printStatSymlink() {
-	printStat(statSymlink, SYMLINK_STR)
+	printStat(statSymlink, strSymlink)
 }
 */
 
 func printStatUnsupported() {
-	printStat(statUnsupported, UNSUPPORTED_STR)
+	printStat(statUnsupported, strUnsupported)
 }
 
 func printStatInvalid() {
-	printStat(statInvalid, INVALID_STR)
+	printStat(statInvalid, strInvalid)
 }
 
 func printStatIgnored() {
@@ -142,13 +142,13 @@ func printStat(l []string, msg string) {
 		f := getRealPath(v)
 		t1, _ := getRawFileType(v)
 		t2, _ := getFileType(v)
-		assert(t2 != SYMLINK) // symlink chains resolved
-		if t1 == SYMLINK {
-			assert(optIgnoreSymlink || t2 == DIR || t2 == INVALID)
+		assert(t2 != typeSymlink) // symlink chains resolved
+		if t1 == typeSymlink {
+			assert(optIgnoreSymlink || t2 == typeDir || t2 == typeInvalid)
 			fmt.Printf("%s (%s -> %s)\n",
 				f, getFileTypeString(t1), getFileTypeString(t2))
 		} else {
-			assert(t2 != DIR)
+			assert(t2 != typeDir)
 			fmt.Printf("%s (%s)\n", f, getFileTypeString(t1))
 		}
 	}
